@@ -7,6 +7,7 @@
 #include <camera/po8030.h>
 
 #include <process_image.h>
+#include <leds.h>
 
 
 static float distance_cm = 0;
@@ -58,19 +59,37 @@ static THD_FUNCTION(ProcessImage, arg) {
 
 		uint8_t img_buff[640] = {0};
 		uint8_t* pointeur = &img_buff;
-		uint64_t moyenne = 0;
+		uint64_t moyenne_red = 0;
+		uint64_t moyenne_green = 0;
+		uint64_t moyenne_blue = 0;
+
 		for(int i = 0; i<640;i++){
-			uint8_t temp1 = img_buff_ptr[2*i+1];
-			uint8_t temp2 = img_buff_ptr[2*i];
+			uint8_t pixel_low = img_buff_ptr[2*i+1];
+			uint8_t pixel_high = img_buff_ptr[2*i];
+
+			uint8_t pixel_blue = pixel_low & 0b00011111;
+			uint8_t pixel_green = (pixel_low >> 5) + ((pixel_high & 0b00000111) << 3);
+			uint8_t pixel_red = pixel_high >> 3;
+
+			moyenne_red += pixel_red;
+			moyenne_green += pixel_green;
+			moyenne_blue += pixel_blue;
+
+			/*
 			temp1 &= 0b11100000;
 			temp1 = temp1 >> 5;
 			temp2 &= 0b00000111;
 			temp2 = temp2 << 3;
 			pointeur[i] = temp1 + temp2;
 			moyenne += temp1 + temp2;
+			*/
 		}
-		moyenne /= 640;
-		if(moyenne < NIGHT_THRESHOLD) {
+		moyenne_red = (moyenne_red/640) << 1; //conversion en 6 bits
+		moyenne_green = (moyenne_green/640);
+		moyenne_blue = (moyenne_blue/640) << 1; //conversion en 6 bits
+
+		//chprintf((BaseSequentialStream *)&SD3, "pixel_mean = %d \n", (moyenne_red + moyenne_blue)/2);
+		if((moyenne_red + moyenne_blue)/2 < NIGHT_THRESHOLD) {
 			set_front_led(1);
 		} else {
 			set_front_led(0);
