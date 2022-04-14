@@ -67,27 +67,12 @@ int main(void)
 	process_image_start();
 	chThdSleepMilliseconds(100);
 	calibrate_ir();
-	/*set_led(1,1);
-	set_body_led(1);
-	set_rgb_led(LED4, 99, 0, 0);
-	set_rgb_led(LED6, 0,99,0);
-	set_rgb_led(LED8,0,0,30);*/
 
-	//int16_t speedi = 200;
-	//int16_t speedi2 = 200;
 	int8_t Kp = 1;
 	int16_t speedk = 200;
 	int16_t speedk2 = 200;
 	while(1){
 		chThdSleepMilliseconds(200);
-		/*chprintf((BaseSequentialStream *)&SDU1, "calib = %x \n", get_calibrated_prox(1));
-		//chprintf((BaseSequentialStream *)&SDU1, "prox = %x \n", get_prox(1));
-		chprintf((BaseSequentialStream *)&SDU1, "diff = %x \n", get_ambient_light(0));
-		chprintf((BaseSequentialStream *)&SDU1, "amb1 = %x \n", get_ambient_light(1));
-		chprintf((BaseSequentialStream *)&SDU1, "amb2 = %x \n", get_ambient_light(2));
-		set_rgb_led(2, 0, 99, 0);*/
-		//chprintf((BaseSequentialStream *)&SDU1, "proxright = %d ", get_prox(0));
-		//chprintf((BaseSequentialStream *)&SDU1, "proxleft = %d ", get_prox(7));
 
 		int16_t proxLeft = get_prox(7) + get_prox(6);
 		int16_t proxRight = get_prox(0) + get_prox(1);
@@ -95,24 +80,7 @@ int main(void)
 		int16_t diff = proxLeft - proxRight;
 		speedk = diff * Kp;
 		speedk2 =  - diff * Kp;
-		/*if(proxLeft - proxRight > 100){
-			if(speedi<1000){
-				speedi += 100;
-			}
-			if(speedi2 > -1000){
-				speedi2 -= 100;
-			}
-		} else if(proxRight - proxLeft > 100){
-			if(speedi2<1000){
-				speedi2 += 100;
-			}
-			if(speedi > -1000){
-				speedi -= 100;
-			}
-		} else {
-			speedi = 200;
-			speed2i = 200;
-		}*/
+
 		left_motor_set_speed(200 + speedk);
 		right_motor_set_speed(200 + speedk2);
 	}

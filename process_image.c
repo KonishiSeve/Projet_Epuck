@@ -22,7 +22,7 @@ static THD_FUNCTION(CaptureImage, arg) {
     (void)arg;
 
 	//Takes pixels 0 to IMAGE_BUFFER_SIZE of the line 10 + 11 (minimum 2 lines because reasons)
-	po8030_advanced_config(FORMAT_RGB565, 0, 10, IMAGE_BUFFER_SIZE, 2, SUBSAMPLING_X1, SUBSAMPLING_X1);
+	po8030_advanced_config(FORMAT_RGB565, 0, 0, IMAGE_BUFFER_SIZE, 2, SUBSAMPLING_X1, SUBSAMPLING_X1);
 	dcmi_enable_double_buffering();
 	dcmi_set_capture_mode(CAPTURE_ONE_SHOT);
 	dcmi_prepare();
@@ -70,30 +70,11 @@ static THD_FUNCTION(ProcessImage, arg) {
 			moyenne += temp1 + temp2;
 		}
 		moyenne /= 640;
-		uint16_t limGauche = 0;
-		uint32_t largeur = 0;
-		uint8_t threshold = moyenne / 1.3;
-		uint32_t largeurMax = 0;
-		for(int i = 0; i<640;i++){
-			if(pointeur[i]<threshold && largeur == 0){
-				largeur = i;
-				limGauche = i;
-				//chprintf((BaseSequentialStream *)&SDU1, "limGauche = %d \n", limGauche);
-			}
-			if(pointeur[i]>threshold && largeur != 0){
-				largeur = i - largeur;
-				if(largeur > largeurMax){
-					largeurMax = largeur;
-					centre = (limGauche + i )/2;
-					//chprintf((BaseSequentialStream *)&SDU1, "centre = %d \n", get_centre());
-				}
-				largeur = 0;
-			}
+		if(moyenne < NIGHT_THRESHOLD) {
+			set_front_led(1);
+		} else {
+			set_front_led(0);
 		}
-		//chprintf((BaseSequentialStream *)&SDU1, "largeurMax = %d \n", largeurMax);
-		distance_cm = largeurMax / 11.7;
-		//chprintf((BaseSequentialStream *)&SDU1, "distance = %f \n", distance_cm);
-		SendUint8ToComputer(pointeur, 640);
 		chThdSleepMilliseconds(100);
 		}
 }
