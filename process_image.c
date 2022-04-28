@@ -8,6 +8,10 @@
 
 #include <process_image.h>
 
+#define NIGHT_THRESHOLD 20
+#define RED_THRESHOLD 20
+
+
 //semaphore
 static BSEMAPHORE_DECL(image_ready_sem, TRUE);
 
@@ -52,12 +56,42 @@ static THD_FUNCTION(ProcessImage, arg) {
 		uint8_t img_buff[640] = {0};
 		uint8_t* pointeur = &img_buff;
 
-		/*vérifie s'il fait nuit et allumer si c'est le cas()
+
+		uint64_t moyenne_red = 0;
+		uint64_t moyenne_green = 0;
+		uint64_t moyenne_blue = 0;
+
+		for(int i = 0; i<640;i++){
+			uint8_t pixel_low = img_buff_ptr[2*i+1];
+			uint8_t pixel_high = img_buff_ptr[2*i];
+
+			uint8_t pixel_blue = pixel_low & 0b00011111;
+			uint8_t pixel_green = (pixel_low >> 5) + ((pixel_high & 0b00000111) << 3);
+			uint8_t pixel_red = pixel_high >> 3;
+
+			moyenne_red += pixel_red;
+			moyenne_green += pixel_green;
+			moyenne_blue += pixel_blue;
+
+		}
+		moyenne_red = (moyenne_red/640) << 1; //conversion en 6 bits
+		moyenne_green = (moyenne_green/640);
+		moyenne_blue = (moyenne_blue/640) << 1; //conversion en 6 bits
 
 
-		if(feu) {
+		/*vérifie s'il fait nuit et allumer si c'est le cas()*/
+
+
+		if((moyenne_green + moyenne_blue < NIGHT_THRESHOLD - 5)){
+			set_front_led(1);
+		}else if(moyenne_green + moyenne_blue > NIGHT_THRESHOLD + 40){
+			set_front_led(0);
+		}
+		chThdSleepMilliseconds(100);
+
+		/*if(feu) {
 			suit le feu()
-		}*/
+    	}*/
 
     }
 }

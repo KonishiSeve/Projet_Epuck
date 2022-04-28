@@ -16,8 +16,9 @@
 #include "hal.h"
 #include <sensors/proximity.h>
 #include <leds.h>
-#include "spi_comm.h"
+
 #include <navigation.h>
+#include <clignotant.h>
 
 
 /* === Liste des threads ===
@@ -62,7 +63,6 @@ int main(void)
 	chSysInit();
 	mpu_init();
 
-	navigation_start();
 	serial_start(); //Pour le débug
 
 	spi_comm_start(); //Pour les leds rgb
@@ -79,17 +79,18 @@ int main(void)
 	proximity_start();
 	messagebus_topic_t *proximity_topic = messagebus_find_topic_blocking(&bus, "/proximity");
 	proximity_msg_t prox;
-
+	navigation_start();
+	clignotant_start();
 
 	process_image_start();
 	chThdSleepMilliseconds(100);
 
 
 	while(1){
-		chThdSleepMilliseconds(200);
+
 	}
 
-
+	chThdSleepMilliseconds(100);
 }
 
 #define STACK_CHK_GUARD 0xe2dee396
