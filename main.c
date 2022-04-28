@@ -17,6 +17,7 @@
 #include <sensors/proximity.h>
 #include <leds.h>
 #include "spi_comm.h"
+#include <navigation.h>
 
 
 /* === Liste des threads ===
@@ -61,7 +62,7 @@ int main(void)
 	chSysInit();
 	mpu_init();
 
-
+	navigation_start();
 	serial_start(); //Pour le débug
 
 	spi_comm_start(); //Pour les leds rgb
@@ -82,6 +83,7 @@ int main(void)
 
 	process_image_start();
 	chThdSleepMilliseconds(100);
+
 
 	while(1){
 		chThdSleepMilliseconds(200);
