@@ -51,6 +51,14 @@ static THD_FUNCTION(ProcessImage, arg) {
 
 		uint8_t img_buff[640] = {0};
 		uint8_t* pointeur = &img_buff;
+
+		vérifie s'il fait nuit et allumer si c'est le cas()
+
+
+		if(feu) {
+			suit le feu()
+		}
+
 		}
 }
 
