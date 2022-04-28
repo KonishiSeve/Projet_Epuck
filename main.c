@@ -18,6 +18,22 @@
 #include <leds.h>
 #include "spi_comm.h"
 
+
+/* === Liste des threads ===
+Nom : fonction, priorité (fichier)
+
+ProcessImage : détecte le feu rouge, NORMALPRIO (process_iamge.c)
+CaptureImage : capture une image, NORMALPRIO (process_image.c)
+
+proximity_thd : lit les valeurs des capteurs de proximité, NORMALPRIO, (sensors/proximity.c)
+
+
+note: Il faudra mesurer le temps d'execution de chaque thread pour définir les priorités correctement
+
+note: les moteurs utilisent directement les timers ??
+*/
+
+
 // Pour faire marcher les capteurs de proximité
 messagebus_t bus;
 MUTEX_DECL(bus_lock);
