@@ -10,6 +10,7 @@
 
 #define NIGHT_THRESHOLD 20
 #define RED_THRESHOLD 20
+#define TAILLE_FEU_THRESHOLD 20
 
 
 //semaphore
@@ -37,6 +38,16 @@ static THD_FUNCTION(CaptureImage, arg) {
     }
 }
 
+static uint16_t centre_feu = 0;
+uint16_t get_centre_feu(void) {
+	return centre_feu;
+}
+static uint16_t taille_feu = 0;
+uint16_t get_taille_feu(void) {
+	return taille_feu;
+}
+
+
 
 static THD_WORKING_AREA(waProcessImage, 1024);
 static THD_FUNCTION(ProcessImage, arg) {
@@ -54,7 +65,7 @@ static THD_FUNCTION(ProcessImage, arg) {
 		img_buff_ptr = dcmi_get_last_image_ptr();
 
 		uint8_t img_buff[640] = {0};
-		uint8_t* pointeur = &img_buff;
+		uint8_t* pointeur_image = &image;
 
 
 		uint64_t moyenne_red = 0;
@@ -68,6 +79,7 @@ static THD_FUNCTION(ProcessImage, arg) {
 			uint8_t pixel_blue = pixel_low & 0b00011111;
 			uint8_t pixel_green = (pixel_low >> 5) + ((pixel_high & 0b00000111) << 3);
 			uint8_t pixel_red = pixel_high >> 3;
+			pointeur_image[i] = pixel_red;
 
 			moyenne_red += pixel_red;
 			moyenne_green += pixel_green;
@@ -78,6 +90,32 @@ static THD_FUNCTION(ProcessImage, arg) {
 		moyenne_green = (moyenne_green/640);
 		moyenne_blue = (moyenne_blue/640) << 1; //conversion en 6 bits
 
+		//Détection de pic pour le feux rouge
+		uint8_t threshold_rouge = moyenne_red/1.3;
+		uint16_t largeur_pic = 0;
+		uint16_t limite_gauche_pic = 0;
+		uint16_t largeur_max = 0;
+		uint16_t centre_pic = 0;
+
+		for(int i = 0; i<640;i++){
+			if(pointeur_image > threshold_rouge && largeur_pic==0) {
+				largeur_pic = i;
+				limite_gauche_pic = i;
+			}
+			if(pointeur_image < threshold_rouge && largeur_pic!=0) {
+				largeur_pic = i-largeur_pic;
+				if(largeur_pic > largeur_max) {
+					largeur_max = largeur_pic;
+					centre_pic = (limite_gauche_pic+i)/2;
+				}
+				largeur_pic = 0;
+			}
+		}
+		if(largeur_max > TAILLE_FEU_THRESHOLD) {
+			taille_feu = largeur_max;
+		} else {
+			taille_feu = 0;
+		}
 
 		/*vérifie s'il fait nuit et allumer si c'est le cas()*/
 

@@ -2,30 +2,36 @@
 #include "hal.h"
 #include <motors.h>
 #include <main.h>
+#include <process_image.h>
+#include <chprintf.h>
+
+#define CENTRE_IMAGE 320
 
 //Thread pour éviter les obstacles <-> s'aligner avec le feu
 // sleep 200ms
 //envoie à clignotant
-//reçoit de process_image si le feu est vert ou rouge
+//reçoit de process_image la position du centre/la taille du feu (les deux == 0 si pas de feu détecté)
 //reçoit les données des capteurs infrarouge
 
-static uint8_t clignoter;
 
+//utilisé pour communiquer avec le thread clignotant
+static uint8_t clignoter;
 uint8_t get_cligno(){
 	return clignoter;
-	}
+}
 
+
+//thread qui s'occupe d'éviter les obstacles et suivre le feu
 THD_WORKING_AREA(navigation_thd_wa, 256);
 THD_FUNCTION(navigation_thd,arg) {
 
 	chRegSetThreadName(__FUNCTION__);
 	(void) arg;
-	//int16_t speedk = 200;
-	//int16_t speedk2 = 200;
 	int16_t diffspeed = 0;
 
 	while(1) {
-		while(1) {
+		//Mode suivit de route
+		while(0/*get_taille_feu()==0*/) {
 			clignoter = 0;
 			// éviter obstacle()
 			const int8_t Kp = 1;
@@ -33,9 +39,6 @@ THD_FUNCTION(navigation_thd,arg) {
 			int16_t proxRight = get_prox(0) + get_prox(1);
 
 			int16_t diff = proxLeft - proxRight;
-/*
-			speedk = diff * Kp;
-			speedk2 =  - diff * Kp;*/
 			diffspeed = diff*Kp;
 
 			left_motor_set_speed(200 + diffspeed);
@@ -48,7 +51,17 @@ THD_FUNCTION(navigation_thd,arg) {
 			}
 			chThdSleepMilliseconds(100);
 		}
-		//attend_que_le_feu_soit_vert();
+		//Mode alignement avec le feu et attente du feu vert
+		while(1/*get_taille_feu != 0*/) {
+			chprintf((BaseSequentialStream *)&SD3, "centre: %d", get_centre_feu());
+			if(get_centre_feu() < CENTRE_IMAGE) {
+				left_motor_set_speed(100 + 50);
+				right_motor_set_speed(200 - 50);
+			} else {
+				left_motor_set_speed(100 - 50);
+				right_motor_set_speed(100 + 50);
+			}
+		}
 	}
 }
 
