@@ -6,12 +6,12 @@
 #include <main.h>
 #include <camera/po8030.h>
 
+#include <chprintf.h>
 #include <process_image.h>
 
 #define NIGHT_THRESHOLD 20
 #define RED_THRESHOLD 20
 #define TAILLE_FEU_THRESHOLD 20
-
 
 //semaphore
 static BSEMAPHORE_DECL(image_ready_sem, TRUE);
@@ -81,6 +81,7 @@ static THD_FUNCTION(ProcessImage, arg) {
 			uint8_t pixel_red = pixel_high >> 3;
 			pointeur_image[i] = pixel_red;
 
+
 			moyenne_red += pixel_red;
 			moyenne_green += pixel_green;
 			moyenne_blue += pixel_blue;
@@ -92,18 +93,20 @@ static THD_FUNCTION(ProcessImage, arg) {
 
 		//Détection de pic pour le feux rouge
 		uint8_t threshold_rouge = moyenne_red/1.3;
+		//chprintf((BaseSequentialStream *)&SD3, "moyenne_rouge: %d", moyenne_red);
 		uint16_t largeur_pic = 0;
 		uint16_t limite_gauche_pic = 0;
 		uint16_t largeur_max = 0;
 		uint16_t centre_pic = 0;
 
 		for(int i = 0; i<640;i++){
-			if(pointeur_image > threshold_rouge && largeur_pic==0) {
+			if(pointeur_image[i] > threshold_rouge && largeur_pic==0) {
 				largeur_pic = i;
 				limite_gauche_pic = i;
 			}
-			if(pointeur_image < threshold_rouge && largeur_pic!=0) {
+			if(pointeur_image[i] < threshold_rouge && largeur_pic!=0) {
 				largeur_pic = i-largeur_pic;
+				//chprintf((BaseSequentialStream *)&SD3, " fin du pic %d", largeur_pic);
 				if(largeur_pic > largeur_max) {
 					largeur_max = largeur_pic;
 					centre_pic = (limite_gauche_pic+i)/2;
@@ -111,18 +114,21 @@ static THD_FUNCTION(ProcessImage, arg) {
 				largeur_pic = 0;
 			}
 		}
-		if(largeur_max > TAILLE_FEU_THRESHOLD) {
+		if(largeur_max > 60) {
 			taille_feu = largeur_max;
+			centre_feu = centre_pic;
 		} else {
 			taille_feu = 0;
+			centre_feu = 0;
 		}
+		//chprintf((BaseSequentialStream *)&SD3, "taille: %d", taille_feu);
 
 		/*vérifie s'il fait nuit et allumer si c'est le cas()*/
 
 
 		if((moyenne_green + moyenne_blue < NIGHT_THRESHOLD - 5)){
-			set_front_led(1);
-		}else if(moyenne_green + moyenne_blue > NIGHT_THRESHOLD + 40){
+			//set_front_led(1);
+		}else if(moyenne_green + moyenne_blue > NIGHT_THRESHOLD + 60){
 			set_front_led(0);
 		}
 		chThdSleepMilliseconds(100);
