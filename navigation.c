@@ -7,7 +7,7 @@
 #include <leds.h>
 
 #define CENTRE_IMAGE 320
-
+#define KP_FEU 2
 //Thread pour éviter les obstacles <-> s'aligner avec le feu
 // sleep 200ms
 //envoie à clignotant
@@ -32,8 +32,8 @@ THD_FUNCTION(navigation_thd,arg) {
 
 	while(1) {
 		//Mode suivit de route
-		while(get_taille_feu()==0) {
-			chprintf((BaseSequentialStream *)&SD3, "taille: %d \r \n", get_taille_feu());
+		while(0/*get_taille_feu()==0*/) {
+			//chprintf((BaseSequentialStream *)&SD3, "taille: %d \r \n", get_taille_feu());
 			clignoter = 0;
 			// éviter obstacle()
 			const int8_t Kp = 1;
@@ -57,17 +57,11 @@ THD_FUNCTION(navigation_thd,arg) {
 		set_rgb_led(LED6, 99,0,0);
 		set_led(LED5,2);
 		//Mode alignement avec le feu et attente du feu vert
-		while(get_taille_feu() != 0) {
-			chprintf((BaseSequentialStream *)&SD3, "taille: %d \r \n", get_taille_feu());
-			if(get_taille_feu() != 0) {
-				if(get_centre_feu() > CENTRE_IMAGE) {
-					left_motor_set_speed(150 + 50);
-					right_motor_set_speed(150 - 50);
-				} else {
-					left_motor_set_speed(150 - 50);
-					right_motor_set_speed(150 + 50);
-				}
-			}
+		while(1/*get_taille_feu() != 0*/) {
+			chprintf((BaseSequentialStream *)&SD3, "centre: %d \r \n", get_centre_feu());
+				int16_t erreur = get_centre_feu() - CENTRE_IMAGE;
+				left_motor_set_speed(150 + KP_FEU*erreur);
+				right_motor_set_speed(150 - KP_FEU*erreur);
 		}
 		set_rgb_led(LED4, 0,0,0);
 		set_rgb_led(LED6, 0,0,0);

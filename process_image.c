@@ -92,7 +92,7 @@ static THD_FUNCTION(ProcessImage, arg) {
 		moyenne_blue = (moyenne_blue/640) << 1; //conversion en 6 bits
 
 		//Détection de pic pour le feux rouge
-		uint8_t threshold_rouge = moyenne_red/1.3;
+		uint8_t threshold_green = moyenne_green/1.3;
 		//chprintf((BaseSequentialStream *)&SD3, "moyenne_rouge: %d", moyenne_red);
 		uint16_t largeur_pic = 0;
 		uint16_t limite_gauche_pic = 0;
@@ -100,11 +100,11 @@ static THD_FUNCTION(ProcessImage, arg) {
 		uint16_t centre_pic = 0;
 
 		for(int i = 0; i<640;i++){
-			if(pointeur_image[i] > threshold_rouge && largeur_pic==0) {
+			if(pointeur_image[i] < threshold_green && largeur_pic==0) {
 				largeur_pic = i;
 				limite_gauche_pic = i;
 			}
-			if(pointeur_image[i] < threshold_rouge && largeur_pic!=0) {
+			if(pointeur_image[i] > threshold_green && largeur_pic!=0) {
 				largeur_pic = i-largeur_pic;
 				//chprintf((BaseSequentialStream *)&SD3, " fin du pic %d", largeur_pic);
 				if(largeur_pic > largeur_max) {
@@ -114,7 +114,7 @@ static THD_FUNCTION(ProcessImage, arg) {
 				largeur_pic = 0;
 			}
 		}
-		if(largeur_max > 60) {
+		if(largeur_max > 40) {
 			taille_feu = largeur_max;
 			centre_feu = centre_pic;
 		} else {
