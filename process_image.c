@@ -9,6 +9,8 @@
 #include <chprintf.h>
 #include <process_image.h>
 
+#include <leds.h>
+
 #define NIGHT_THRESHOLD 20
 #define RED_THRESHOLD 20
 #define TAILLE_FEU_THRESHOLD 20
@@ -58,6 +60,8 @@ static THD_FUNCTION(ProcessImage, arg) {
 	uint8_t *img_buff_ptr;
 	uint8_t image[IMAGE_BUFFER_SIZE] = {0};
 
+	uint8_t trigger_red = 0;
+
     while(1){
     	//waits until an image has been captured
         chBSemWait(&image_ready_sem);
@@ -92,7 +96,7 @@ static THD_FUNCTION(ProcessImage, arg) {
 		moyenne_blue = (moyenne_blue/640) << 1; //conversion en 6 bits
 
 		//Détection de pic pour le feux rouge
-		uint8_t threshold_green = moyenne_green/1.3;
+		uint16_t threshold_red = moyenne_red/1.3;
 		//chprintf((BaseSequentialStream *)&SD3, "moyenne_rouge: %d", moyenne_red);
 		uint16_t largeur_pic = 0;
 		uint16_t limite_gauche_pic = 0;
@@ -100,11 +104,11 @@ static THD_FUNCTION(ProcessImage, arg) {
 		uint16_t centre_pic = 0;
 
 		for(int i = 0; i<640;i++){
-			if(pointeur_image[i] < threshold_green && largeur_pic==0) {
+			if(pointeur_image[i] > threshold_red && largeur_pic==0) {
 				largeur_pic = i;
 				limite_gauche_pic = i;
 			}
-			if(pointeur_image[i] > threshold_green && largeur_pic!=0) {
+			if(pointeur_image[i] < threshold_red && largeur_pic !=0 ) {
 				largeur_pic = i-largeur_pic;
 				//chprintf((BaseSequentialStream *)&SD3, " fin du pic %d", largeur_pic);
 				if(largeur_pic > largeur_max) {
@@ -114,17 +118,37 @@ static THD_FUNCTION(ProcessImage, arg) {
 				largeur_pic = 0;
 			}
 		}
-		if(largeur_max > 40) {
-			taille_feu = largeur_max;
-			centre_feu = centre_pic;
-		} else {
-			taille_feu = 0;
-			centre_feu = 0;
+		uint64_t standev = 0;
+		/*
+		chprintf((BaseSequentialStream *)&SD3, " , limite gauche: %d", limite_gauche_pic);
+		chprintf((BaseSequentialStream *)&SD3, " , limite droite: %d \r \n", limite_gauche_pic+largeur_pic);
+		*/
+		for(int i=limite_gauche_pic; i<(limite_gauche_pic+largeur_max); i++) {
+			standev += abs(pointeur_image[i]-moyenne_red);
 		}
-		//chprintf((BaseSequentialStream *)&SD3, "taille: %d", taille_feu);
+		standev /= 100;
+		taille_feu = largeur_max;
+		centre_feu = centre_pic;
 
-		/*vérifie s'il fait nuit et allumer si c'est le cas()*/
+		chprintf((BaseSequentialStream *)&SD3, "taille: %d", taille_feu);
+		chprintf((BaseSequentialStream *)&SD3, " , centre: %d", centre_feu);
+		chprintf((BaseSequentialStream *)&SD3, " , moyenne: %d", moyenne_red);
+		chprintf((BaseSequentialStream *)&SD3, " , std: %d \r \n", standev);
 
+		if(standev < 7 && standev > 0 && moyenne_red >= 20) {
+			trigger_red++;
+		}
+
+		if(trigger_red >=3) {
+			set_rgb_led(LED4, 99,0,0);
+			set_rgb_led(LED6, 99,0,0);
+			set_led(LED5,2);
+			trigger_red = 0;
+			chThdSleepMilliseconds(1000);
+			set_rgb_led(LED4, 0,0,0);
+			set_rgb_led(LED6, 0,0,0);
+			set_led(LED5,0);
+		}
 
 		if((moyenne_green + moyenne_blue < NIGHT_THRESHOLD - 5)){
 			//set_front_led(1);
