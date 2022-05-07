@@ -14,7 +14,7 @@
 #define NIGHT_THRESHOLD 20
 #define RED_THRESHOLD 20
 #define TAILLE_FEU_THRESHOLD 150
-#define THRESHOLD_GREEN 20
+#define THRESHOLD_GREEN 10
 
 //semaphore
 static BSEMAPHORE_DECL(image_ready_sem, TRUE);
@@ -93,7 +93,9 @@ static THD_FUNCTION(ProcessImage, arg) {
 			pointeur_image[i] = pixel_red;
 			moyenne_red += pixel_red;
 			moyenne_blue += pixel_blue;
-			moyenne_green += pixel_green;
+			if((i>(centre_feu-taille_feu/2)) && (i<(centre_feu+taille_feu/2))) {
+				moyenne_green += pixel_green;
+			}
 
 		}
 		moyenne_red = (moyenne_red/640) << 1; //conversion en 6 bits
@@ -132,6 +134,7 @@ static THD_FUNCTION(ProcessImage, arg) {
 		taille_feu = largeur_max;
 		centre_feu = centre_pic;
 
+
 		chprintf((BaseSequentialStream *)&SD3, "taille: %d", taille_feu);
 		chprintf((BaseSequentialStream *)&SD3, " , centre: %d", centre_feu);
 		chprintf((BaseSequentialStream *)&SD3, " , moyenne: %d", moyenne_red);
@@ -140,7 +143,7 @@ static THD_FUNCTION(ProcessImage, arg) {
 
 
 		//------------------------- GESTION DU STATE ET ENVOI DES VARIABLES --------------------------------
-		if(standev < 10 && standev > 0 && moyenne_red >= 20 && trigger_red < 3 && general_state == 0) {
+		if(standev < 10 && standev > 0 && moyenne_red >= 21 && trigger_red < 3 && general_state == 0) {
 			trigger_red++;
 		} else if(trigger_red>=3 && general_state==0) {
 			general_state = 1;
@@ -150,11 +153,7 @@ static THD_FUNCTION(ProcessImage, arg) {
 			trigger_red = 0;
 		}
 
-		if(general_state == 1) {
-			debug_counter++;
-		}
-
-		if(debug_counter >= 40) {
+		if(general_state==1 && moyenne_green > THRESHOLD_GREEN) {
 			general_state = 0;
 			debug_counter = 0;
 		}

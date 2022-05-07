@@ -7,6 +7,7 @@
 #include <leds.h>
 
 #define CENTRE_IMAGE 320
+#define CIBLE_TAILLE 240
 #define KP_FEU 1
 
 #define TAILLE_FEU_ATTENTE 70
@@ -57,12 +58,23 @@ THD_FUNCTION(navigation_thd,arg) {
 		set_rgb_led(LED6, 99,0,0);
 		set_led(LED5,2);
 
+		systime_t time;
+		int16_t erreur_distance_i = 0;
+
 		//Mode alignement avec le feu rouge
 		while(get_general_state()==1/*get_taille_feu() > TAILLE_FEU_ATTENTE && get_taille_feu() != 0*/) {
+			time = chVTGetSystemTime();
 			int16_t erreur = get_centre_feu() - CENTRE_IMAGE;
-			left_motor_set_speed(150 + KP_FEU*erreur);
-			right_motor_set_speed(150 - KP_FEU*erreur);
-			chThdSleepMilliseconds(100);
+			int16_t erreur_distance = CIBLE_TAILLE - get_taille_feu();
+			erreur_distance_i += erreur_distance*MS2ST(10);
+			left_motor_set_speed((erreur_distance*3 /*+ erreur_distance_i/300*/) + KP_FEU*erreur/2);
+			right_motor_set_speed((erreur_distance*3 /*+ erreur_distance_i/300*/) - KP_FEU*erreur/2);
+			/*
+			chprintf((BaseSequentialStream *)&SD3, "Size: %d", get_taille_feu());
+			chprintf((BaseSequentialStream *)&SD3, " , P: %d", erreur_distance*3);
+			chprintf((BaseSequentialStream *)&SD3, " , I: %d \r \n", erreur_distance_i/150);*/
+			//chThdSleepMilliseconds(100);
+			chThdSleepUntilWindowed(time, time + MS2ST(10));
 		}
 		set_rgb_led(LED4, 0,0,0);
 		set_rgb_led(LED6, 0,0,0);
