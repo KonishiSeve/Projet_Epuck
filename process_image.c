@@ -41,32 +41,38 @@ static THD_FUNCTION(CaptureImage, arg) {
 }
 
 //variables pour communiquer avec le thread "navigation"
-static uint16_t centre_feu = 0;
-uint16_t get_centre_feu(void) {
-	return centre_feu;
-}
-static uint16_t taille_feu = 0;
-uint16_t get_taille_feu(void) {
-	return taille_feu;
+static uint16_t traffic_light_center = 0;
+uint16_t get_traffic_light_center(void) {
+	return traffic_light_center;
 }
 
-//0: route, 1:suivit feu, 2:attente feu
-static uint8_t general_state = 0;
+static uint16_t traffic_light_size = 0;
+uint16_t get_traffic_light_size(void) {
+	return traffic_light_size;
+}
+
+static uint8_t general_state = STATE_ROAD;
 uint8_t get_general_state(void) {
 	return general_state;
 }
 
 
-static THD_WORKING_AREA(waProcessImage, 1024);
+static THD_WORKING_AREA(waProcessImage, 2048);
 static THD_FUNCTION(ProcessImage, arg) {
 
     chRegSetThreadName(__FUNCTION__);
     (void)arg;
 
 	uint8_t *img_buff_ptr;
-	uint8_t image[IMAGE_BUFFER_SIZE] = {0};
+	uint8_t img_red[IMAGE_BUFFER_SIZE] = {0};
+	uint8_t img_green[IMAGE_BUFFER_SIZE] = {0};
+	uint8_t img_blue[IMAGE_BUFFER_SIZE] = {0};
+	uint8_t* img_red_ptr = &img_red;
+	uint8_t* img_green_ptr = &img_green;
+	uint8_t* img_blue_ptr = &img_blue;
 
 	uint8_t trigger_red = 0;
+	uint8_t trigger_green = 0;
 
 
     while(1){
@@ -76,89 +82,96 @@ static THD_FUNCTION(ProcessImage, arg) {
 		img_buff_ptr = dcmi_get_last_image_ptr();
 
 		uint8_t img_buff[IMAGE_WIDTH] = {0};
-		uint8_t* pointeur_image = &image;
 
-		//Calculs des moyennes et stockage de l'image rouge
-		uint64_t moyenne_red = 0;
-		uint64_t moyenne_green = 0;
-		uint64_t moyenne_blue = 0;
+		uint64_t mean_red = 0;
+		uint64_t mean_green = 0;
+		uint64_t mean_blue = 0;
+		//Separation et Stockage des 3 cannaux de couleur, calcul des moyennes
 		for(int i = 0; i<IMAGE_WIDTH;i++){
 			uint8_t pixel_low = img_buff_ptr[2*i+1];
 			uint8_t pixel_high = img_buff_ptr[2*i];
 			uint8_t pixel_blue = pixel_low & 0b00011111;
 			uint8_t pixel_green = (pixel_low >> 5) + ((pixel_high & 0b00000111) << 3);
 			uint8_t pixel_red = pixel_high >> 3;
-			pointeur_image[i] = pixel_red;
-			moyenne_red += pixel_red;
-			moyenne_blue += pixel_blue;
-			if((i>(centre_feu-taille_feu/2)) && (i<(centre_feu+taille_feu/2))) {
-				moyenne_green += pixel_green;
-			}
 
+			img_red_ptr[i] = pixel_red << 1; //conversion en 6 bits
+			img_green_ptr[i] = pixel_green;
+			img_blue_ptr[i] = pixel_blue; //conversion en 6 bits
+
+			mean_red += pixel_red;
+			mean_blue += pixel_blue;
+			mean_green += pixel_green;
 		}
-		moyenne_red = (moyenne_red/IMAGE_WIDTH) << 1; //conversion en 6 bits
-		moyenne_green = (moyenne_green/IMAGE_WIDTH);
-		moyenne_blue = (moyenne_blue/IMAGE_WIDTH) << 1; //conversion en 6 bits
+		mean_red = (mean_red/IMAGE_WIDTH) << 1; //conversion en 6 bits
+		mean_green = (mean_green/IMAGE_WIDTH);
+		mean_blue = (mean_blue/IMAGE_WIDTH) << 1; //conversion en 6 bits
 
 
 		//Detection de pic pour le feux rouge
-		uint16_t threshold_red = moyenne_red/RED_PEAK_THRESHOLD_DIVIDER;
-		uint16_t largeur_pic = 0;
-		uint16_t limite_gauche_pic = 0;
-		uint16_t largeur_max = 0;
-		uint16_t centre_pic = 0;
+		uint16_t threshold_red = mean_red*RED_PEAK_THRESHOLD_COEFF;
+		uint16_t threshold_green = mean_green*GREEN_PEAK_THRESHOLD_COEFF;
+		uint16_t threshold_blue = mean_blue*BLUE_PEAK_THRESHOLD_COEFF;
+
+		uint16_t peak_left_limit = 0;
+		uint16_t peak_width_max = 0;
+		uint16_t peak_center = 0;
+
 		for(int i = 0; i<IMAGE_WIDTH;i++){
-			if(pointeur_image[i] > threshold_red && largeur_pic==0) {
-				largeur_pic = i;
-				limite_gauche_pic = i;
-			}
-			if(pointeur_image[i] < threshold_red && largeur_pic !=0 ) {
-				largeur_pic = i-largeur_pic;
-				if(largeur_pic > largeur_max) {
-					largeur_max = largeur_pic;
-					centre_pic = (limite_gauche_pic+i)/2;
+			//Recherche d'un pic rouge
+			if(general_state == STATE_ROAD && img_red_ptr[i] > threshold_red && img_green_ptr[i] < threshold_green && img_blue_ptr[i] < threshold_blue) {
+				if(peak_left_limit==0) {
+					peak_left_limit = i;
 				}
-				largeur_pic = 0;
+			}
+			//Recherche d'un pic vert
+			else if(general_state == STATE_TRAFFIC_LIGHT && img_red_ptr[i] < threshold_red && img_green_ptr[i] > threshold_green && img_blue_ptr[i] < threshold_blue) {
+				if(peak_left_limit==0) {
+					peak_left_limit = i;
+				}
+			}
+			else if(peak_left_limit !=0) {
+				if((i - peak_left_limit) > peak_width_max) {
+					peak_width_max = i - peak_left_limit;
+					peak_center = (peak_left_limit+i)/2;
+				}
+				peak_left_limit = 0;
 			}
 		}
-		taille_feu = largeur_max;
-		centre_feu = centre_pic;
+		traffic_light_size = peak_width_max;
+		traffic_light_center = peak_center;
 
-		//calcul de l'ecart type seulement dans la region du pic rouge
-		uint64_t standev = 0;
-		for(int i=limite_gauche_pic; i<(limite_gauche_pic+largeur_max); i++) {
-			standev += abs(pointeur_image[i]-moyenne_red);
-		}
-		standev /= RED_STD_DIVIDER;
-
-		//Pour la calibration
-		chprintf((BaseSequentialStream *)&SD3, "taille: %d", taille_feu);
-		chprintf((BaseSequentialStream *)&SD3, " , centre: %d", centre_feu);
-		chprintf((BaseSequentialStream *)&SD3, " , moyenne: %d", moyenne_red);
-		chprintf((BaseSequentialStream *)&SD3, " , moyenne vert: %d", moyenne_green);
-		chprintf((BaseSequentialStream *)&SD3, " , std: %d \r \n", standev);
-
-
-		//Detection du feu rouge/vert et gestion du state
-		if(standev < RED_STD_TOP_THRESHOLD && standev > RED_STD_BOTTOM_THRESHOLD && moyenne_red >= RED_MEAN_THRESHOLD && trigger_red < RED_TRIGGER_THRESHOLD && general_state == STATE_ROAD) {
+		//Detection de feu rouge
+		if(general_state == STATE_ROAD && peak_width_max > PEAK_WIDTH_THRESHOLD && trigger_red < RED_PEAK_TRIGGER) {
 			trigger_red++;
-		} else if(trigger_red >= RED_TRIGGER_THRESHOLD && general_state==STATE_ROAD) {
-			general_state = STATE_TRAFFIC_LIGHT;
-			chprintf((BaseSequentialStream *)&SD3, "=== RED TRIGGER ===\r \n", standev);
-			trigger_red = 0;
-		} else {
+		}
+		if(general_state == STATE_ROAD && trigger_red >= PEAK_TRIGGER) {
+			general_state == STATE_TRAFFIC_LIGHT;
 			trigger_red = 0;
 		}
 
-		if(general_state==STATE_TRAFFIC_LIGHT && moyenne_green > THRESHOLD_GREEN) {
-			general_state = STATE_ROAD;
+		//Detection de feu vert
+		if(general_state == STATE_TRAFFIC_LIGHT && peak_width_max > PEAK_WIDTH_THRESHOLD && trigger_green < GREEN_PEAK_TRIGGER) {
+			trigger_green++;
+		}
+		if(general_state == STATE_ROAD && trigger_red >= PEAK_TRIGGER) {
+			general_state == STATE_ROAD;
+			trigger_green = 0;
 		}
 
+		//Detection de jour/nuit
 		if(moyenne_blue < NIGHT_THRESHOLD){
 			//set_front_led(1);
 		}else if(moyenne_blue > DAY_THRESHOLD){
 			set_front_led(0);
 		}
+
+		//Pour la calibration
+		chprintf((BaseSequentialStream *)&SD3, "taille: %d", traffic_light_size);
+		chprintf((BaseSequentialStream *)&SD3, " , centre: %d", traffic_light_center);
+		chprintf((BaseSequentialStream *)&SD3, " , mean red: %d", mean_red);
+		chprintf((BaseSequentialStream *)&SD3, " , mean vert: %d", mean_green);
+		chprintf((BaseSequentialStream *)&SD3, " , mean blue: %d", mean_blue);
+
 		chThdSleepMilliseconds(100);
     }
 }
