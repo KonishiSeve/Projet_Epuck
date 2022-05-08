@@ -102,7 +102,7 @@ static THD_FUNCTION(ProcessImage, arg) {
 
 
 		//Detection de pic pour le feux rouge
-		uint16_t threshold_red = moyenne_red/RED_THRESHOLD_MEAN_DIVIDER;
+		uint16_t threshold_red = moyenne_red/RED_PEAK_THRESHOLD_DIVIDER;
 		uint16_t largeur_pic = 0;
 		uint16_t limite_gauche_pic = 0;
 		uint16_t largeur_max = 0;
@@ -131,6 +131,7 @@ static THD_FUNCTION(ProcessImage, arg) {
 		}
 		standev /= RED_STD_DIVIDER;
 
+		//Pour la calibration
 		chprintf((BaseSequentialStream *)&SD3, "taille: %d", taille_feu);
 		chprintf((BaseSequentialStream *)&SD3, " , centre: %d", centre_feu);
 		chprintf((BaseSequentialStream *)&SD3, " , moyenne: %d", moyenne_red);
@@ -143,6 +144,7 @@ static THD_FUNCTION(ProcessImage, arg) {
 			trigger_red++;
 		} else if(trigger_red >= RED_TRIGGER_THRESHOLD && general_state==STATE_ROAD) {
 			general_state = STATE_TRAFFIC_LIGHT;
+			chprintf((BaseSequentialStream *)&SD3, "=== RED TRIGGER ===\r \n", standev);
 			trigger_red = 0;
 		} else {
 			trigger_red = 0;

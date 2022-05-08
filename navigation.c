@@ -6,6 +6,7 @@
 #include <chprintf.h>
 #include <leds.h>
 #include <calibration.h>
+#include <navigation.h>
 
 #define CENTRE_IMAGE 320
 #define CIBLE_TAILLE 240

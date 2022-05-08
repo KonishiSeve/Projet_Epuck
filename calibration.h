@@ -9,8 +9,8 @@
 
 //detection de feu rouge/vert
 #define RED_STD_BOTTOM_THRESHOLD 0
-#define RED_STD_TOP_THRESHOLD 10
-#define RED_MEAN_THRESHOLD 21
+#define RED_STD_TOP_THRESHOLD 8
+#define RED_MEAN_THRESHOLD 24
 #define RED_TRIGGER_THRESHOLD 3
 
 #define THRESHOLD_GREEN 10
