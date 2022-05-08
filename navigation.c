@@ -5,27 +5,27 @@
 #include <process_image.h>
 #include <chprintf.h>
 #include <leds.h>
+#include <calibration.h>
 
 #define CENTRE_IMAGE 320
 #define CIBLE_TAILLE 240
 #define KP_FEU 1
 
-#define TAILLE_FEU_ATTENTE 70
-//Thread pour éviter les obstacles <-> s'aligner avec le feu
+//Thread pour ï¿½viter les obstacles <-> s'aligner avec le feu
 // sleep 200ms
-//envoie à clignotant
-//reçoit de process_image la position du centre/la taille du feu (les deux == 0 si pas de feu détecté)
-//reçoit les données des capteurs infrarouge
+//envoie ï¿½ clignotant
+//reï¿½oit de process_image la position du centre/la taille du feu (les deux == 0 si pas de feu dï¿½tectï¿½)
+//reï¿½oit les donnï¿½es des capteurs infrarouge
 
 
-//utilisé pour communiquer avec le thread clignotant
-static uint8_t clignoter;
+//utilisï¿½ pour communiquer avec le thread clignotant
+static uint8_t clignoter = BLINK_OFF;
 uint8_t get_cligno(){
 	return clignoter;
 }
 
 
-//thread qui s'occupe d'éviter les obstacles et suivre le feu
+//thread qui s'occupe d'ï¿½viter les obstacles et suivre le feu
 THD_WORKING_AREA(navigation_thd_wa, 256);
 THD_FUNCTION(navigation_thd,arg) {
 
@@ -36,9 +36,8 @@ THD_FUNCTION(navigation_thd,arg) {
 	while(1) {
 
 		//Mode suivit de route
-		while(get_general_state()==0/*get_taille_feu()==0*/) {
+		while(get_general_state()==0) {
 			clignoter = 0;
-			// éviter obstacle()
 			const int8_t Kp = 1;
 			int16_t proxLeft = get_prox(7) + get_prox(6);
 			int16_t proxRight = get_prox(0) + get_prox(1);
@@ -53,7 +52,7 @@ THD_FUNCTION(navigation_thd,arg) {
 			}
 			chThdSleepMilliseconds(100);
 		}
-		clignoter = 0;
+		clignoter = BLINK_OFF;
 		set_rgb_led(LED4, 99,0,0);
 		set_rgb_led(LED6, 99,0,0);
 		set_led(LED5,2);
@@ -62,29 +61,18 @@ THD_FUNCTION(navigation_thd,arg) {
 		int16_t erreur_distance_i = 0;
 
 		//Mode alignement avec le feu rouge
-		while(get_general_state()==1/*get_taille_feu() > TAILLE_FEU_ATTENTE && get_taille_feu() != 0*/) {
+		while(get_general_state()==1) {
 			time = chVTGetSystemTime();
 			int16_t erreur = get_centre_feu() - CENTRE_IMAGE;
 			int16_t erreur_distance = CIBLE_TAILLE - get_taille_feu();
 			erreur_distance_i += erreur_distance*MS2ST(10);
 			left_motor_set_speed((erreur_distance*3 /*+ erreur_distance_i/300*/) + KP_FEU*erreur/2);
 			right_motor_set_speed((erreur_distance*3 /*+ erreur_distance_i/300*/) - KP_FEU*erreur/2);
-			/*
-			chprintf((BaseSequentialStream *)&SD3, "Size: %d", get_taille_feu());
-			chprintf((BaseSequentialStream *)&SD3, " , P: %d", erreur_distance*3);
-			chprintf((BaseSequentialStream *)&SD3, " , I: %d \r \n", erreur_distance_i/150);*/
-			//chThdSleepMilliseconds(100);
 			chThdSleepUntilWindowed(time, time + MS2ST(10));
 		}
 		set_rgb_led(LED4, 0,0,0);
 		set_rgb_led(LED6, 0,0,0);
 		set_led(LED5,0);
-
-		/*
-		//attente du feu vert
-		while(get_taille_feu() != 0) {
-			chThdSleepMilliseconds(500);
-		}*/
 	}
 }
 

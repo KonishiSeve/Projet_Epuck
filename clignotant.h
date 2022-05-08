@@ -1,5 +1,3 @@
-
-
 #ifndef CLIGNOTANT_H_
 #define CLIGNOTANT_H_
 
