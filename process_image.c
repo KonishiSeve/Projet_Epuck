@@ -108,8 +108,8 @@ static THD_FUNCTION(ProcessImage, arg) {
 
 		//Detection de pic pour le feux rouge
 		uint16_t red_peak_threshold_red = mean_red*RED_PEAK_RED_THRESHOLD_COEFF;
-		uint16_t red_peak_threshold_green = mean_green*RED_PEAK_GREEN_THRESHOLD_COEFF;
-		uint16_t red_peak_threshold_blue = mean_blue*RED_PEAK_BLUE_THRESHOLD_COEFF;
+		//uint16_t red_peak_threshold_green = mean_green*RED_PEAK_GREEN_THRESHOLD_COEFF;
+		//uint16_t red_peak_threshold_blue = mean_blue*RED_PEAK_BLUE_THRESHOLD_COEFF;
 
 		uint16_t green_peak_threshold_red = mean_red*GREEN_PEAK_RED_THRESHOLD_COEFF;
 		uint16_t green_peak_threshold_green = mean_green*GREEN_PEAK_GREEN_THRESHOLD_COEFF;
@@ -124,7 +124,7 @@ static THD_FUNCTION(ProcessImage, arg) {
 
 		for(int i = 0; i<IMAGE_WIDTH;i++){
 			//Recherche d'un pic rouge
-			if(img_red_ptr[i] > red_peak_threshold_red && img_green_ptr[i] < red_peak_threshold_green && img_blue_ptr[i] < red_peak_threshold_blue) {
+			if(img_red_ptr[i] > red_peak_threshold_red) {
 				if(red_peak_left_limit==0) {
 					red_peak_left_limit = i;
 				}
@@ -166,13 +166,13 @@ static THD_FUNCTION(ProcessImage, arg) {
 		//Calcul de l'ecart type dans le pic rouge
 		uint16_t red_peak_std = 0;
 		for(int i=red_peak_left_limit;i<red_peak_left_limit+red_peak_width_max;i++) {
-			red_peak_std += (img_red_ptr[i] - red_peak_mean);
+			red_peak_std += abs(img_red_ptr[i] - red_peak_mean);
 		}
 		red_peak_std = 10*red_peak_std/red_peak_width_max; //multiplication par 10 pour garder une precision sans utiliser de float
 
 
 		//Detection de feu rouge
-		if(general_state == STATE_ROAD && trigger_red < RED_PEAK_TRIGGER && mean_red >= RED_MEAN_THRESHOLD && red_peak_std > 0 && red_peak_std <= 9 && mean_blue <=20) {
+		if(general_state == STATE_ROAD && trigger_red < RED_PEAK_TRIGGER && mean_red >= RED_MEAN_THRESHOLD && red_peak_std >= RED_STD_THRESHOLD_LOW /*&& red_peak_std <= RED_STD_THRESHOLD_HIGH*/) {
 			trigger_red++;
 		}
 		else {
@@ -201,9 +201,9 @@ static THD_FUNCTION(ProcessImage, arg) {
 		chprintf((BaseSequentialStream *)&SD3, " , taille red: %d", traffic_light_size);
 		chprintf((BaseSequentialStream *)&SD3, " , centre red: %d", traffic_light_center);
 		chprintf((BaseSequentialStream *)&SD3, " , mean red: %d", mean_red);
+		chprintf((BaseSequentialStream *)&SD3, " , STD red: %d", red_peak_std);
 		chprintf((BaseSequentialStream *)&SD3, " , mean vert: %d", green_peak_mean);
 		chprintf((BaseSequentialStream *)&SD3, " , mean blue: %d", mean_blue);
-		chprintf((BaseSequentialStream *)&SD3, " , STD red: %d", red_peak_std);
 
 
 		chprintf((BaseSequentialStream *)&SD3, "\r \n");
