@@ -72,7 +72,6 @@ static THD_FUNCTION(ProcessImage, arg) {
 	uint8_t* img_blue_ptr = &img_blue;
 
 	uint8_t trigger_red = 0;
-	uint8_t trigger_green = 0;
 
 
     while(1){
@@ -154,9 +153,30 @@ static THD_FUNCTION(ProcessImage, arg) {
 		traffic_light_size = red_peak_width_max;
 		traffic_light_center = red_peak_center;
 
+		//Calcul de la moyenne dans le pic rouge
+		uint16_t red_peak_mean = 0;
+		uint16_t green_peak_mean = 0;
+		for(int i=red_peak_left_limit;i<red_peak_left_limit+red_peak_width_max;i++) {
+			red_peak_mean += img_red_ptr[i];
+			green_peak_mean += img_green_ptr[i];
+		}
+		red_peak_mean /= red_peak_width_max;
+		green_peak_mean /= red_peak_width_max;
+
+		//Calcul de l'ecart type dans le pic rouge
+		uint16_t red_peak_std = 0;
+		for(int i=red_peak_left_limit;i<red_peak_left_limit+red_peak_width_max;i++) {
+			red_peak_std += (img_red_ptr[i] - red_peak_mean);
+		}
+		red_peak_std = 10*red_peak_std/red_peak_width_max; //multiplication par 10 pour garder une precision sans utiliser de float
+
+
 		//Detection de feu rouge
-		if(general_state == STATE_ROAD && red_peak_width_max > RED_PEAK_WIDTH_THRESHOLD && trigger_red < RED_PEAK_TRIGGER && mean_red >= RED_MEAN_THRESHOLD) {
+		if(general_state == STATE_ROAD && trigger_red < RED_PEAK_TRIGGER && mean_red >= RED_MEAN_THRESHOLD && red_peak_std > 0 && red_peak_std <= 9 && mean_blue <=20) {
 			trigger_red++;
+		}
+		else {
+			trigger_red = 0;
 		}
 		if(general_state == STATE_ROAD && trigger_red >= RED_PEAK_TRIGGER) {
 			chprintf((BaseSequentialStream *)&SD3, "----- RED TRIGGER -----\r\n");
@@ -165,13 +185,9 @@ static THD_FUNCTION(ProcessImage, arg) {
 		}
 
 		//Detection de feu vert
-		if(general_state == STATE_TRAFFIC_LIGHT && green_peak_width_max > GREEN_PEAK_WIDTH_THRESHOLD && trigger_green < GREEN_PEAK_TRIGGER) {
-			trigger_green++;
-		}
-		if(general_state == STATE_TRAFFIC_LIGHT && trigger_green >= GREEN_PEAK_TRIGGER) {
+		if(general_state == STATE_TRAFFIC_LIGHT && green_peak_mean >= 35/*green_peak_width_max > GREEN_PEAK_WIDTH_THRESHOLD*/) {
 			chprintf((BaseSequentialStream *)&SD3, "----- GREEN TRIGGER -----\r\n");
 			general_state = STATE_ROAD;
-			trigger_green = 0;
 		}
 
 		//Detection de jour/nuit
@@ -181,34 +197,14 @@ static THD_FUNCTION(ProcessImage, arg) {
 			set_front_led(0);
 		}
 
-		//Pour la calibration
-
-		uint16_t ROI_mean_red = 0;
-		uint16_t ROI_mean_green = 0;
-		uint16_t ROI_mean_blue = 0;
-
-		for(int i=red_peak_left_limit;i<red_peak_left_limit+red_peak_width_max;i++) {
-			ROI_mean_red += img_red_ptr[i];
-			ROI_mean_green += img_green_ptr[i];
-			ROI_mean_blue += img_blue_ptr[i];
-		}
-
-		ROI_mean_red /= red_peak_left_limit+red_peak_width_max;
-		ROI_mean_green /= red_peak_left_limit+red_peak_width_max;
-		ROI_mean_blue /= red_peak_left_limit+red_peak_width_max;
-
 		chprintf((BaseSequentialStream *)&SD3, "ETAT: %d", general_state);
 		chprintf((BaseSequentialStream *)&SD3, " , taille red: %d", traffic_light_size);
 		chprintf((BaseSequentialStream *)&SD3, " , centre red: %d", traffic_light_center);
-		chprintf((BaseSequentialStream *)&SD3, " , taille green: %d", green_peak_width_max);
 		chprintf((BaseSequentialStream *)&SD3, " , mean red: %d", mean_red);
-		chprintf((BaseSequentialStream *)&SD3, " , mean vert: %d", mean_green);
+		chprintf((BaseSequentialStream *)&SD3, " , mean vert: %d", green_peak_mean);
 		chprintf((BaseSequentialStream *)&SD3, " , mean blue: %d", mean_blue);
+		chprintf((BaseSequentialStream *)&SD3, " , STD red: %d", red_peak_std);
 
-		/*
-		chprintf((BaseSequentialStream *)&SD3, " , ROI mean red: %d", ROI_mean_red);
-		chprintf((BaseSequentialStream *)&SD3, " , ROI mean vert: %d", ROI_mean_green);
-		chprintf((BaseSequentialStream *)&SD3, " , ROI mean blue: %d \r \n", ROI_mean_blue);*/
 
 		chprintf((BaseSequentialStream *)&SD3, "\r \n");
 
