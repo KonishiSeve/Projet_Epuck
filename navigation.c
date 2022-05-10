@@ -9,7 +9,7 @@
 #include <navigation.h>
 
 #define CENTRE_IMAGE 320
-#define CIBLE_TAILLE 300
+#define CIBLE_TAILLE 150
 #define KP_FEU 1
 
 //Thread pour �viter les obstacles <-> s'aligner avec le feu

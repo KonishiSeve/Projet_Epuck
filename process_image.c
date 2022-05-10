@@ -25,7 +25,7 @@ static THD_FUNCTION(CaptureImage, arg) {
     (void)arg;
 
 	//Takes pixels 0 to IMAGE_BUFFER_SIZE of the line 0 + 1 (minimum 2 lines because reasons)
-	po8030_advanced_config(FORMAT_RGB565, 0, 10, IMAGE_BUFFER_SIZE, 2, SUBSAMPLING_X1, SUBSAMPLING_X1);
+    po8030_advanced_config(FORMAT_RGB565, 0, 0, IMAGE_BUFFER_SIZE, 2, SUBSAMPLING_X1, SUBSAMPLING_X1); //po8030_advanced_config(FORMAT_RGB565, 0, 10, IMAGE_BUFFER_SIZE, 2, SUBSAMPLING_X1, SUBSAMPLING_X1);
 	dcmi_enable_double_buffering();
 	dcmi_set_capture_mode(CAPTURE_ONE_SHOT);
 	dcmi_prepare();
@@ -73,6 +73,7 @@ static THD_FUNCTION(ProcessImage, arg) {
 
 	uint8_t trigger_red = 0;
 
+	uint8_t debug_counter = 0;
 
     while(1){
     	//waits until an image has been captured
@@ -93,7 +94,7 @@ static THD_FUNCTION(ProcessImage, arg) {
 			uint8_t pixel_green = (pixel_low >> 5) + ((pixel_high & 0b00000111) << 3);
 			uint8_t pixel_red = pixel_high >> 3;
 
-			img_red_ptr[i] = pixel_red << 1; //conversion en 6 bits
+			img_red[i] = pixel_red; //<< 1; //conversion en 6 bits
 			img_green_ptr[i] = pixel_green;
 			img_blue_ptr[i] = pixel_blue << 1; //conversion en 6 bits
 
@@ -101,20 +102,25 @@ static THD_FUNCTION(ProcessImage, arg) {
 			mean_blue += pixel_blue;
 			mean_green += pixel_green;
 		}
+
 		mean_red = (mean_red/IMAGE_WIDTH) << 1; //conversion en 6 bits
 		mean_green = (mean_green/IMAGE_WIDTH);
 		mean_blue = (mean_blue/IMAGE_WIDTH) << 1; //conversion en 6 bits
 
+		uint16_t debug_green_mean_peak = 0;
+		//Moyenne Verte dans ancien pic rouge
+		if(1/*general_state == STATE_TRAFFIC_LIGHT*/) {
+			for(int i = traffic_light_center-traffic_light_size/2;i<traffic_light_center+traffic_light_size/2;i++) {
+				debug_green_mean_peak += img_green_ptr[i];
+			}
+			debug_green_mean_peak /= traffic_light_size;
+		}
+		chprintf((BaseSequentialStream *)&SD3, "size: %d", traffic_light_size);
+		chprintf((BaseSequentialStream *)&SD3, "center: %d", traffic_light_center);
+		chprintf((BaseSequentialStream *)&SD3, " , mean vert: %d", debug_green_mean_peak);
 
-		//Detection de pic pour le feux rouge
-		uint16_t red_peak_threshold_red = mean_red*RED_PEAK_RED_THRESHOLD_COEFF;
-		//uint16_t red_peak_threshold_green = mean_green*RED_PEAK_GREEN_THRESHOLD_COEFF;
-		//uint16_t red_peak_threshold_blue = mean_blue*RED_PEAK_BLUE_THRESHOLD_COEFF;
-
-		uint16_t green_peak_threshold_red = mean_red*GREEN_PEAK_RED_THRESHOLD_COEFF;
-		uint16_t green_peak_threshold_green = mean_green*GREEN_PEAK_GREEN_THRESHOLD_COEFF;
-		uint16_t green_peak_threshold_blue = mean_blue*GREEN_PEAK_BLUE_THRESHOLD_COEFF;
-
+		#define RED_SLOPE_SHARPNESS 3
+		// ========== Detection de pic pour le feux rouge ==========
 		uint16_t red_peak_left_limit = 0;
 		uint16_t red_peak_width_max = 0;
 		uint16_t red_peak_center = 0;
@@ -122,32 +128,18 @@ static THD_FUNCTION(ProcessImage, arg) {
 		uint16_t green_peak_left_limit = 0;
 		uint16_t green_peak_width_max = 0;
 
-		for(int i = 0; i<IMAGE_WIDTH;i++){
-			//Recherche d'un pic rouge
-			if(img_red_ptr[i] > red_peak_threshold_red) {
+		for(int i = RED_SLOPE_SHARPNESS; i<IMAGE_WIDTH;i++){
+			if(img_red_ptr[i] > mean_red && img_red_ptr[i-RED_SLOPE_SHARPNESS] < mean_red) {
 				if(red_peak_left_limit==0) {
 					red_peak_left_limit = i;
 				}
 			}
-			else if(red_peak_left_limit !=0) {
-				if((i - red_peak_left_limit) > red_peak_width_max) {
-					red_peak_width_max = i - red_peak_left_limit;
-					red_peak_center = (red_peak_left_limit+i)/2;
+			else if(img_red_ptr[i] < mean_red && img_red_ptr[i-RED_SLOPE_SHARPNESS] > mean_red && red_peak_left_limit !=0) {
+				if((i - red_peak_left_limit - RED_SLOPE_SHARPNESS) > red_peak_width_max) {
+					red_peak_width_max = i - red_peak_left_limit - RED_SLOPE_SHARPNESS;
+					red_peak_center = (red_peak_left_limit+i-RED_SLOPE_SHARPNESS)/2;
 				}
 				red_peak_left_limit = 0;
-			}
-
-			//Recherche d'un pic vert
-			else if(img_red_ptr[i] < green_peak_threshold_red && img_green_ptr[i] > green_peak_threshold_green && img_blue_ptr[i] < green_peak_threshold_blue) {
-				if(green_peak_left_limit==0) {
-					green_peak_left_limit = i;
-				}
-			}
-			else if(green_peak_left_limit !=0) {
-				if((i - green_peak_left_limit) > green_peak_width_max) {
-					green_peak_width_max = i - green_peak_left_limit;
-				}
-				green_peak_left_limit = 0;
 			}
 		}
 		traffic_light_size = red_peak_width_max;
@@ -171,7 +163,7 @@ static THD_FUNCTION(ProcessImage, arg) {
 		red_peak_std = 10*red_peak_std/red_peak_width_max; //multiplication par 10 pour garder une precision sans utiliser de float
 
 
-		//Detection de feu rouge
+		// ========== Detection de feu rouge ==========
 		if(general_state == STATE_ROAD && trigger_red < RED_PEAK_TRIGGER && mean_red >= RED_MEAN_THRESHOLD && red_peak_std >= RED_STD_THRESHOLD_LOW /*&& red_peak_std <= RED_STD_THRESHOLD_HIGH*/) {
 			trigger_red++;
 		}
@@ -179,14 +171,14 @@ static THD_FUNCTION(ProcessImage, arg) {
 			trigger_red = 0;
 		}
 		if(general_state == STATE_ROAD && trigger_red >= RED_PEAK_TRIGGER) {
-			chprintf((BaseSequentialStream *)&SD3, "----- RED TRIGGER -----\r\n");
+			//chprintf((BaseSequentialStream *)&SD3, "----- RED TRIGGER -----\r\n");
 			general_state = STATE_TRAFFIC_LIGHT;
 			trigger_red = 0;
 		}
 
-		//Detection de feu vert
-		if(general_state == STATE_TRAFFIC_LIGHT && green_peak_mean >= 35/*green_peak_width_max > GREEN_PEAK_WIDTH_THRESHOLD*/) {
-			chprintf((BaseSequentialStream *)&SD3, "----- GREEN TRIGGER -----\r\n");
+		// ========== Detection de feu vert ===========
+		if(general_state == STATE_TRAFFIC_LIGHT && debug_green_mean_peak >= 50/*green_peak_width_max > GREEN_PEAK_WIDTH_THRESHOLD*/) {
+			//chprintf((BaseSequentialStream *)&SD3, "----- GREEN TRIGGER -----\r\n");
 			general_state = STATE_ROAD;
 		}
 
@@ -197,18 +189,27 @@ static THD_FUNCTION(ProcessImage, arg) {
 			set_front_led(0);
 		}
 
+		/*
+		if(debug_counter >= 2) {
+			SendUint8ToComputer(img_green,IMAGE_BUFFER_SIZE);
+			debug_counter = 0;
+		}
+		else {
+			debug_counter++;
+		}
+		*/
+
+		/*
 		chprintf((BaseSequentialStream *)&SD3, "ETAT: %d", general_state);
 		chprintf((BaseSequentialStream *)&SD3, " , taille red: %d", traffic_light_size);
 		chprintf((BaseSequentialStream *)&SD3, " , centre red: %d", traffic_light_center);
 		chprintf((BaseSequentialStream *)&SD3, " , mean red: %d", mean_red);
 		chprintf((BaseSequentialStream *)&SD3, " , STD red: %d", red_peak_std);
-		chprintf((BaseSequentialStream *)&SD3, " , mean vert: %d", green_peak_mean);
-		chprintf((BaseSequentialStream *)&SD3, " , mean blue: %d", mean_blue);
-
-
+		chprintf((BaseSequentialStream *)&SD3, " , mean vert: %d", debug_green_mean_peak);
+		//chprintf((BaseSequentialStream *)&SD3, " , mean blue: %d", mean_blue);*/
 		chprintf((BaseSequentialStream *)&SD3, "\r \n");
 
-		chThdSleepMilliseconds(100);
+		//chThdSleepMilliseconds(100);
     }
 }
 

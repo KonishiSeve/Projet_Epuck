@@ -41,6 +41,13 @@ messagebus_t bus;
 MUTEX_DECL(bus_lock);
 CONDVAR_DECL(bus_condvar);
 
+//Pour le debug
+void SendUint8ToComputer(uint8_t* data, uint16_t size)
+{
+	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)"START", 5);
+	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)&size, sizeof(uint16_t));
+	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)data, size);
+}
 
 //Utilisé pour le débug
 static void serial_start(void)
@@ -87,10 +94,8 @@ int main(void)
 
 
 	while(1){
-
+		chThdSleepMilliseconds(1000);
 	}
-
-	chThdSleepMilliseconds(100);
 }
 
 #define STACK_CHK_GUARD 0xe2dee396
