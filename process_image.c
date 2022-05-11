@@ -66,13 +66,8 @@ static THD_FUNCTION(ProcessImage, arg) {
 	uint8_t *img_buff_ptr;
 	uint8_t img_red[IMAGE_BUFFER_SIZE] = {0};
 	uint8_t img_green[IMAGE_BUFFER_SIZE] = {0};
-	uint8_t img_blue[IMAGE_BUFFER_SIZE] = {0};
-	uint8_t* img_red_ptr = &img_red;
-	uint8_t* img_green_ptr = &img_green;
-	uint8_t* img_blue_ptr = &img_blue;
 
 	uint8_t trigger_red = 0;
-
 	uint8_t debug_counter = 0;
 
     while(1){
@@ -83,10 +78,10 @@ static THD_FUNCTION(ProcessImage, arg) {
 
 		uint8_t img_buff[IMAGE_WIDTH] = {0};
 
+		// ===== Separation et Stockage des 3 cannaux de couleur, calcul des moyennes =====
 		uint64_t mean_red = 0;
 		uint64_t mean_green = 0;
 		uint64_t mean_blue = 0;
-		//Separation et Stockage des 3 cannaux de couleur, calcul des moyennes
 		for(int i = 0; i<IMAGE_WIDTH;i++){
 			uint8_t pixel_low = img_buff_ptr[2*i+1];
 			uint8_t pixel_high = img_buff_ptr[2*i];
@@ -95,23 +90,22 @@ static THD_FUNCTION(ProcessImage, arg) {
 			uint8_t pixel_red = pixel_high >> 3;
 
 			img_red[i] = pixel_red; //<< 1; //conversion en 6 bits
-			img_green_ptr[i] = pixel_green;
-			img_blue_ptr[i] = pixel_blue << 1; //conversion en 6 bits
+			img_green[i] = pixel_green;
 
 			mean_red += pixel_red;
 			mean_blue += pixel_blue;
 			mean_green += pixel_green;
 		}
-
 		mean_red = (mean_red/IMAGE_WIDTH) << 1; //conversion en 6 bits
 		mean_green = (mean_green/IMAGE_WIDTH);
 		mean_blue = (mean_blue/IMAGE_WIDTH) << 1; //conversion en 6 bits
 
+
+		// ===== Moyenne Verte dans ancien pic rouge =====
 		uint16_t debug_green_mean_peak = 0;
-		//Moyenne Verte dans ancien pic rouge
 		if(general_state == STATE_TRAFFIC_LIGHT) {
 			for(int i = traffic_light_center-traffic_light_size/2;i<traffic_light_center+traffic_light_size/2;i++) {
-				debug_green_mean_peak += img_green_ptr[i];
+				debug_green_mean_peak += img_green[i];
 			}
 			debug_green_mean_peak /= traffic_light_size;
 		}
@@ -120,22 +114,22 @@ static THD_FUNCTION(ProcessImage, arg) {
 		chprintf((BaseSequentialStream *)&SD3, "center: %d", traffic_light_center);
 		chprintf((BaseSequentialStream *)&SD3, " , mean vert: %d", debug_green_mean_peak);*/
 
-		#define RED_SLOPE_SHARPNESS 3
 		// ========== Detection de pic pour le feux rouge ==========
 		uint16_t red_peak_left_limit = 0;
 		uint16_t red_peak_width_max = 0;
 		uint16_t red_peak_center = 0;
-
 		uint16_t green_peak_left_limit = 0;
 		uint16_t green_peak_width_max = 0;
-
 		for(int i = RED_SLOPE_SHARPNESS; i<IMAGE_WIDTH;i++){
-			if(img_red_ptr[i] > mean_red && img_red_ptr[i-RED_SLOPE_SHARPNESS] < mean_red) {
+			//Recherche du debut d'un pic
+			if(img_red[i] > mean_red && img_red[i-RED_SLOPE_SHARPNESS] < mean_red) {
 				if(red_peak_left_limit==0) {
 					red_peak_left_limit = i;
 				}
 			}
-			else if(img_red_ptr[i] < mean_red && img_red_ptr[i-RED_SLOPE_SHARPNESS] > mean_red && red_peak_left_limit !=0) {
+			//Recherche de la fin d'un pic
+			else if(img_red[i] < mean_red && img_red[i-RED_SLOPE_SHARPNESS] > mean_red && red_peak_left_limit !=0) {
+				//On prend le pic le plus large
 				if((i - red_peak_left_limit - RED_SLOPE_SHARPNESS) > red_peak_width_max) {
 					red_peak_width_max = i - red_peak_left_limit - RED_SLOPE_SHARPNESS;
 					red_peak_center = (red_peak_left_limit+i-RED_SLOPE_SHARPNESS)/2;
@@ -146,20 +140,18 @@ static THD_FUNCTION(ProcessImage, arg) {
 		traffic_light_size = red_peak_width_max;
 		traffic_light_center = red_peak_center;
 
-		//Calcul de la moyenne dans le pic rouge
+
+		// ===== Calcul de la moyenne dans le pic rouge =====
 		uint16_t red_peak_mean = 0;
-		uint16_t green_peak_mean = 0;
 		for(int i=red_peak_left_limit;i<red_peak_left_limit+red_peak_width_max;i++) {
-			red_peak_mean += img_red_ptr[i];
-			green_peak_mean += img_green_ptr[i];
+			red_peak_mean += img_red[i];
 		}
 		red_peak_mean /= red_peak_width_max;
-		green_peak_mean /= red_peak_width_max;
 
-		//Calcul de l'ecart type dans le pic rouge
+		// ===== Calcul de l'ecart type dans le pic rouge =====
 		uint16_t red_peak_std = 0;
 		for(int i=red_peak_left_limit;i<red_peak_left_limit+red_peak_width_max;i++) {
-			red_peak_std += abs(img_red_ptr[i] - red_peak_mean);
+			red_peak_std += abs(img_red[i] - red_peak_mean);
 		}
 		red_peak_std = 10*red_peak_std/red_peak_width_max; //multiplication par 10 pour garder une precision sans utiliser de float
 
@@ -172,18 +164,16 @@ static THD_FUNCTION(ProcessImage, arg) {
 			trigger_red = 0;
 		}
 		if(general_state == STATE_ROAD && trigger_red >= RED_PEAK_TRIGGER) {
-			//chprintf((BaseSequentialStream *)&SD3, "----- RED TRIGGER -----\r\n");
 			general_state = STATE_TRAFFIC_LIGHT;
 			trigger_red = 0;
 		}
 
 		// ========== Detection de feu vert ===========
-		if(general_state == STATE_TRAFFIC_LIGHT && debug_green_mean_peak >= 60/*green_peak_width_max > GREEN_PEAK_WIDTH_THRESHOLD*/) {
-			//chprintf((BaseSequentialStream *)&SD3, "----- GREEN TRIGGER -----\r\n");
+		if(general_state == STATE_TRAFFIC_LIGHT && debug_green_mean_peak >= 60) {
 			general_state = STATE_ROAD;
 		}
 
-		//Detection de jour/nuit
+		// ===== Detection de jour/nuit =====
 		if(mean_blue < NIGHT_THRESHOLD){
 			//set_front_led(1);
 		}else if(mean_blue > DAY_THRESHOLD){

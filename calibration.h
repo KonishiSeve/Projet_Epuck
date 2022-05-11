@@ -4,23 +4,17 @@
 
 
 //detection de pic rouge
-#define RED_PEAK_RED_THRESHOLD_COEFF 0.72f
-#define RED_MEAN_THRESHOLD 12
-
-//detection de pic vert
-#define GREEN_PEAK_RED_THRESHOLD_COEFF 1.3f
-#define GREEN_PEAK_GREEN_THRESHOLD_COEFF 0.7f
-#define GREEN_PEAK_BLUE_THRESHOLD_COEFF 1.5f
+#define RED_SLOPE_SHARPNESS 3
 
 //detection de feu rouge
+#define RED_MEAN_THRESHOLD 12
 #define RED_PEAK_TRIGGER 3
-#define RED_PEAK_WIDTH_THRESHOLD 70 //100
+#define RED_PEAK_WIDTH_THRESHOLD 70
 #define RED_STD_THRESHOLD_LOW 2
 #define RED_STD_THRESHOLD_HIGH 30
 
 //detection de feu vert
-#define GREEN_PEAK_TRIGGER 1
-#define GREEN_PEAK_WIDTH_THRESHOLD 150
+#define GREEN_MEAN_THRESHOLD 60
 
 //detection de jour/nuit
 #define NIGHT_THRESHOLD 15

@@ -46,7 +46,6 @@ THD_FUNCTION(navigation_thd,arg) {
 			left_motor_set_speed(400 + diffspeed);
 			right_motor_set_speed(400 - diffspeed);
 
-
 			if(diffspeed > 50){
 				clignoter = BLINK_RIGHT;
 			}else if(diffspeed < -50){

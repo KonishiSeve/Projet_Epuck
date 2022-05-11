@@ -20,23 +20,7 @@
 #include <navigation.h>
 #include <clignotant.h>
 
-
-/* === Liste des threads ===
-Nom : fonction, priorité (fichier)
-
-ProcessImage : détecte le feu rouge, NORMALPRIO (process_iamge.c)
-CaptureImage : capture une image, NORMALPRIO (process_image.c)
-
-proximity_thd : lit les valeurs des capteurs de proximité, NORMALPRIO, (sensors/proximity.c)
-
-
-note: Il faudra mesurer le temps d'execution de chaque thread pour définir les priorités correctement
-
-note: les moteurs utilisent directement les timers ??
-*/
-
-
-// Pour faire marcher les capteurs de proximité
+// Pour faire marcher les capteurs de proximitï¿½
 messagebus_t bus;
 MUTEX_DECL(bus_lock);
 CONDVAR_DECL(bus_condvar);
@@ -49,7 +33,7 @@ void SendUint8ToComputer(uint8_t* data, uint16_t size)
 	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)data, size);
 }
 
-//Utilisé pour le débug
+//Utilisï¿½ pour le dï¿½bug
 static void serial_start(void)
 {
 	static SerialConfig ser_cfg = {
@@ -70,11 +54,11 @@ int main(void)
 	chSysInit();
 	mpu_init();
 
-	serial_start(); //Pour le débug
+	serial_start(); //Pour le dï¿½bug
 
 	spi_comm_start(); //Pour les leds rgb
 
-	//configuration de la caméra
+	//configuration de la camï¿½ra
 	dcmi_start();
 	po8030_start();
 
@@ -82,7 +66,7 @@ int main(void)
 	motors_init();
     messagebus_init(&bus, &bus_lock, &bus_condvar); // ????????????????
 
-    //initialisation des capteurs de proximité
+    //initialisation des capteurs de proximitï¿½
 	proximity_start();
 	messagebus_topic_t *proximity_topic = messagebus_find_topic_blocking(&bus, "/proximity");
 	proximity_msg_t prox;
