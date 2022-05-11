@@ -82,6 +82,7 @@ static THD_FUNCTION(ProcessImage, arg) {
 		uint64_t mean_red = 0;
 		uint64_t mean_green = 0;
 		uint64_t mean_blue = 0;
+		uint16_t debug_green_mean_peak = 0;
 		for(int i = 0; i<IMAGE_WIDTH;i++){
 			uint8_t pixel_low = img_buff_ptr[2*i+1];
 			uint8_t pixel_high = img_buff_ptr[2*i];
@@ -90,25 +91,24 @@ static THD_FUNCTION(ProcessImage, arg) {
 			uint8_t pixel_red = pixel_high >> 3;
 
 			img_red[i] = pixel_red; //<< 1; //conversion en 6 bits
+
+			//Calcul de la moyenne verte dans le pic rouge du cycle precedent
+			if(i >= (traffic_light_center-traffic_light_size/2) && i <= (traffic_light_center+traffic_light_size/2)) {
+				debug_green_mean_peak += pixel_green;
+			}
+
 			img_green[i] = pixel_green;
 
 			mean_red += pixel_red;
 			mean_blue += pixel_blue;
 			mean_green += pixel_green;
 		}
+		debug_green_mean_peak /= traffic_light_size;
 		mean_red = (mean_red/IMAGE_WIDTH) << 1; //conversion en 6 bits
 		mean_green = (mean_green/IMAGE_WIDTH);
 		mean_blue = (mean_blue/IMAGE_WIDTH) << 1; //conversion en 6 bits
 
 
-		// ===== Moyenne Verte dans ancien pic rouge =====
-		uint16_t debug_green_mean_peak = 0;
-		if(general_state == STATE_TRAFFIC_LIGHT) {
-			for(int i = traffic_light_center-traffic_light_size/2;i<traffic_light_center+traffic_light_size/2;i++) {
-				debug_green_mean_peak += img_green[i];
-			}
-			debug_green_mean_peak /= traffic_light_size;
-		}
 		/*
 		chprintf((BaseSequentialStream *)&SD3, "size: %d", traffic_light_size);
 		chprintf((BaseSequentialStream *)&SD3, "center: %d", traffic_light_center);
