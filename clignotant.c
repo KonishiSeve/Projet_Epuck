@@ -17,16 +17,12 @@ THD_FUNCTION(clignotant_thd,arg) {
 	while(1) {
 		if (get_cligno() == BLINK_RIGHT) {
 			set_rgb_led(LED2, ORANGE);
-			set_rgb_led(LED4, ORANGE);
 			chThdSleepMilliseconds(BLINK_PERIOD/2);
 			set_rgb_led(LED2, ETEINT);
-			set_rgb_led(LED4, ETEINT);
 		}
 		else if(get_cligno() == BLINK_LEFT) {
-			set_rgb_led(LED6, ORANGE);
 			set_rgb_led(LED8, ORANGE);
 			chThdSleepMilliseconds(BLINK_PERIOD/2);
-			set_rgb_led(LED6, ETEINT);
 			set_rgb_led(LED8, ETEINT);
 		}
 		chThdSleepMilliseconds(BLINK_PERIOD/2);

@@ -38,7 +38,6 @@ THD_FUNCTION(navigation_thd,arg) {
 
 		//Mode suivit de route
 		while(get_general_state()==0) {
-			clignoter = 0;
 			const int8_t Kp = 1;
 			int16_t proxLeft = get_prox(7) + get_prox(6);
 			int16_t proxRight = get_prox(0) + get_prox(1);
@@ -46,17 +45,22 @@ THD_FUNCTION(navigation_thd,arg) {
 			diffspeed = diff*Kp;
 			left_motor_set_speed(400 + diffspeed);
 			right_motor_set_speed(400 - diffspeed);
+
+			/*
 			if(diffspeed > 50){
-				clignoter = 1;
+				clignoter = BLINK_LEFT;
 			}else if(diffspeed < -50){
-				clignoter = 2;
-			}
+				clignoter = BLINK_RIGHT;
+			} else {
+				clignoter = BLINK_OFF;
+			}*/
 			chThdSleepMilliseconds(100);
 		}
 		clignoter = BLINK_OFF;
 		set_rgb_led(LED4, 99,0,0);
 		set_rgb_led(LED6, 99,0,0);
 		set_led(LED5,2);
+		chThdSleepMilliseconds(200);
 
 		systime_t time;
 		int16_t erreur_distance_i = 0;

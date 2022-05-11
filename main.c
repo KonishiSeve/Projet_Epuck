@@ -91,10 +91,11 @@ int main(void)
 
 	process_image_start();
 	chThdSleepMilliseconds(100);
-
+	set_rgb_led(LED4, 99,0,0);
+	set_rgb_led(LED6, 99,0,0);
 
 	while(1){
-		chThdSleepMilliseconds(1000);
+		//chThdSleepMilliseconds(2000);
 	}
 }
 

@@ -115,9 +115,10 @@ static THD_FUNCTION(ProcessImage, arg) {
 			}
 			debug_green_mean_peak /= traffic_light_size;
 		}
+		/*
 		chprintf((BaseSequentialStream *)&SD3, "size: %d", traffic_light_size);
 		chprintf((BaseSequentialStream *)&SD3, "center: %d", traffic_light_center);
-		chprintf((BaseSequentialStream *)&SD3, " , mean vert: %d", debug_green_mean_peak);
+		chprintf((BaseSequentialStream *)&SD3, " , mean vert: %d", debug_green_mean_peak);*/
 
 		#define RED_SLOPE_SHARPNESS 3
 		// ========== Detection de pic pour le feux rouge ==========
@@ -207,9 +208,9 @@ static THD_FUNCTION(ProcessImage, arg) {
 		chprintf((BaseSequentialStream *)&SD3, " , STD red: %d", red_peak_std);
 		chprintf((BaseSequentialStream *)&SD3, " , mean vert: %d", debug_green_mean_peak);
 		//chprintf((BaseSequentialStream *)&SD3, " , mean blue: %d", mean_blue);*/
-		chprintf((BaseSequentialStream *)&SD3, "\r \n");
+		//chprintf((BaseSequentialStream *)&SD3, "\r \n");
 
-		//chThdSleepMilliseconds(100);
+		chThdSleepMilliseconds(100);
     }
 }
 
