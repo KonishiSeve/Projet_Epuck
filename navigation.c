@@ -46,21 +46,21 @@ THD_FUNCTION(navigation_thd,arg) {
 			left_motor_set_speed(400 + diffspeed);
 			right_motor_set_speed(400 - diffspeed);
 
-			/*
+
 			if(diffspeed > 50){
-				clignoter = BLINK_LEFT;
-			}else if(diffspeed < -50){
 				clignoter = BLINK_RIGHT;
+			}else if(diffspeed < -50){
+				clignoter = BLINK_LEFT;
 			} else {
 				clignoter = BLINK_OFF;
-			}*/
+			}
 			chThdSleepMilliseconds(100);
 		}
 		clignoter = BLINK_OFF;
+		chThdSleepMilliseconds(200);
 		set_rgb_led(LED4, 99,0,0);
 		set_rgb_led(LED6, 99,0,0);
 		set_led(LED5,2);
-		chThdSleepMilliseconds(200);
 
 		systime_t time;
 		int16_t erreur_distance_i = 0;

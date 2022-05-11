@@ -5,7 +5,7 @@
 
 //detection de pic rouge
 #define RED_PEAK_RED_THRESHOLD_COEFF 0.72f
-#define RED_MEAN_THRESHOLD 18
+#define RED_MEAN_THRESHOLD 15
 
 //detection de pic vert
 #define GREEN_PEAK_RED_THRESHOLD_COEFF 1.3f
