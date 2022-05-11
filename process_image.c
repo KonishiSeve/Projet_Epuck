@@ -165,7 +165,7 @@ static THD_FUNCTION(ProcessImage, arg) {
 
 
 		// ========== Detection de feu rouge ==========
-		if(general_state == STATE_ROAD && trigger_red < RED_PEAK_TRIGGER && mean_red >= RED_MEAN_THRESHOLD && red_peak_std >= RED_STD_THRESHOLD_LOW /*&& red_peak_std <= RED_STD_THRESHOLD_HIGH*/) {
+		if(general_state == STATE_ROAD && trigger_red < RED_PEAK_TRIGGER && mean_red >= RED_MEAN_THRESHOLD && red_peak_std >= RED_STD_THRESHOLD_LOW && red_peak_std <= RED_STD_THRESHOLD_HIGH && traffic_light_size >= RED_PEAK_WIDTH_THRESHOLD) {
 			trigger_red++;
 		}
 		else {
@@ -178,7 +178,7 @@ static THD_FUNCTION(ProcessImage, arg) {
 		}
 
 		// ========== Detection de feu vert ===========
-		if(general_state == STATE_TRAFFIC_LIGHT && debug_green_mean_peak >= 50/*green_peak_width_max > GREEN_PEAK_WIDTH_THRESHOLD*/) {
+		if(general_state == STATE_TRAFFIC_LIGHT && debug_green_mean_peak >= 60/*green_peak_width_max > GREEN_PEAK_WIDTH_THRESHOLD*/) {
 			//chprintf((BaseSequentialStream *)&SD3, "----- GREEN TRIGGER -----\r\n");
 			general_state = STATE_ROAD;
 		}
@@ -201,7 +201,7 @@ static THD_FUNCTION(ProcessImage, arg) {
 		*/
 
 
-		//chprintf((BaseSequentialStream *)&SD3, "ETAT: %d", general_state);
+		chprintf((BaseSequentialStream *)&SD3, "ETAT: %d", general_state);
 		chprintf((BaseSequentialStream *)&SD3, " , taille red: %d", traffic_light_size);
 		chprintf((BaseSequentialStream *)&SD3, " , centre red: %d", traffic_light_center);
 		chprintf((BaseSequentialStream *)&SD3, " , mean red: %d", mean_red);
