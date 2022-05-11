@@ -65,7 +65,6 @@ static THD_FUNCTION(ProcessImage, arg) {
 
 	uint8_t *img_buff_ptr;
 	uint8_t img_red[IMAGE_BUFFER_SIZE] = {0};
-	uint8_t img_green[IMAGE_BUFFER_SIZE] = {0};
 
 	uint8_t trigger_red = 0;
 	uint8_t debug_counter = 0;
@@ -96,8 +95,6 @@ static THD_FUNCTION(ProcessImage, arg) {
 			if(i >= (traffic_light_center-traffic_light_size/2) && i <= (traffic_light_center+traffic_light_size/2)) {
 				debug_green_mean_peak += pixel_green;
 			}
-
-			img_green[i] = pixel_green;
 
 			mean_red += pixel_red;
 			mean_blue += pixel_blue;
@@ -194,7 +191,7 @@ static THD_FUNCTION(ProcessImage, arg) {
 		chprintf((BaseSequentialStream *)&SD3, "ETAT: %d", general_state);
 		chprintf((BaseSequentialStream *)&SD3, " , taille red: %d", traffic_light_size);
 		chprintf((BaseSequentialStream *)&SD3, " , centre red: %d", traffic_light_center);
-		chprintf((BaseSequentialStream *)&SD3, " , mean red: %d", mean_red);
+		chprintf((BaseSequentialStream *)&SD3, " , mean red: %d",mean_red);
 		chprintf((BaseSequentialStream *)&SD3, " , STD red: %d", red_peak_std);
 		chprintf((BaseSequentialStream *)&SD3, " , mean vert: %d", debug_green_mean_peak);
 		//chprintf((BaseSequentialStream *)&SD3, " , mean blue: %d", mean_blue);*/
