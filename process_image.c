@@ -57,7 +57,7 @@ uint8_t get_general_state(void) {
 }
 
 
-static THD_WORKING_AREA(waProcessImage, 4096);
+static THD_WORKING_AREA(waProcessImage, 1024);
 static THD_FUNCTION(ProcessImage, arg) {
 
     chRegSetThreadName(__FUNCTION__);
@@ -67,6 +67,7 @@ static THD_FUNCTION(ProcessImage, arg) {
 	uint8_t img_red[IMAGE_BUFFER_SIZE] = {0};
 
 	uint8_t trigger_red = 0;
+	uint8_t trigger_night = 0;
 	uint8_t debug_counter = 0;
 
     while(1){
@@ -172,10 +173,25 @@ static THD_FUNCTION(ProcessImage, arg) {
 
 		// ===== Detection de jour/nuit =====
 		if(mean_blue < NIGHT_THRESHOLD){
-			//set_front_led(1);
-		}else if(mean_blue > DAY_THRESHOLD){
+			trigger_night++;
+		}
+		else if(trigger_night > 0){
+			trigger_night--;
+		}
+
+		if(trigger_night >= NIGHT_TRIGGER_THRESHOLD) {
+			set_front_led(1);
+			trigger_night = NIGHT_TRIGGER_THRESHOLD;
+		}
+		else if(trigger_night == 0){
 			set_front_led(0);
 		}
+
+
+		/*
+		}else if(mean_blue > DAY_THRESHOLD){
+			//set_front_led(0);
+		}*/
 
 		/*
 		if(debug_counter >= 2) {
@@ -187,14 +203,13 @@ static THD_FUNCTION(ProcessImage, arg) {
 		}
 		*/
 
-
 		chprintf((BaseSequentialStream *)&SD3, "ETAT: %d", general_state);
 		chprintf((BaseSequentialStream *)&SD3, " , taille red: %d", traffic_light_size);
 		chprintf((BaseSequentialStream *)&SD3, " , centre red: %d", traffic_light_center);
 		chprintf((BaseSequentialStream *)&SD3, " , mean red: %d",mean_red);
 		chprintf((BaseSequentialStream *)&SD3, " , STD red: %d", red_peak_std);
-		chprintf((BaseSequentialStream *)&SD3, " , mean vert: %d", green_mean_peak);
-		//chprintf((BaseSequentialStream *)&SD3, " , mean blue: %d", mean_blue);*/
+		chprintf((BaseSequentialStream *)&SD3, " , mean vert: %d", mean_green);
+		chprintf((BaseSequentialStream *)&SD3, " , mean blue: %d", mean_blue);
 
 
 		chprintf((BaseSequentialStream *)&SD3, "\r \n");

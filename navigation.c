@@ -63,12 +63,17 @@ THD_FUNCTION(navigation_thd,arg) {
 
 		systime_t time;
 		int16_t erreur_distance_i = 0;
+		int16_t erreur_distance = CIBLE_TAILLE - get_traffic_light_size();
 
 		//Mode alignement avec le feu rouge
 		while(get_general_state()==1) {
 			time = chVTGetSystemTime();
 			int16_t erreur = get_traffic_light_center() - CENTRE_IMAGE;
-			int16_t erreur_distance = CIBLE_TAILLE - get_traffic_light_size();
+
+			if(abs(erreur_distance) >= abs(CIBLE_TAILLE - get_traffic_light_size())*1.5) {
+				erreur_distance = CIBLE_TAILLE - get_traffic_light_size();
+			}
+
 			erreur_distance_i += erreur_distance*MS2ST(10);
 			left_motor_set_speed((erreur_distance*3 /*+ erreur_distance_i/300*/) + KP_FEU*erreur/2);
 			right_motor_set_speed((erreur_distance*3 /*+ erreur_distance_i/300*/) - KP_FEU*erreur/2);

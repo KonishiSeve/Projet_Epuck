@@ -18,6 +18,6 @@
 
 //detection de jour/nuit
 #define NIGHT_THRESHOLD 15
-#define DAY_THRESHOLD 80
+#define NIGHT_TRIGGER_THRESHOLD 20
 
 #endif /* CALIBRATION_H_ */
