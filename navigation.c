@@ -11,6 +11,8 @@
 #define CENTRE_IMAGE 320
 #define CIBLE_TAILLE 130
 #define KP_FEU 1
+#define COLOR_RED 99,0,0
+#define COLOR_BLACK 0,0,0
 
 //Thread pour �viter les obstacles <-> s'aligner avec le feu
 // sleep 200ms
@@ -57,8 +59,8 @@ THD_FUNCTION(navigation_thd,arg) {
 		}
 		clignoter = BLINK_OFF;
 		chThdSleepMilliseconds(200);
-		set_rgb_led(LED4, 99,0,0);
-		set_rgb_led(LED6, 99,0,0);
+		set_rgb_led(LED4, COLOR_RED);
+		set_rgb_led(LED6, COLOR_RED);
 		set_led(LED5,2);
 
 		systime_t time;
@@ -87,8 +89,8 @@ THD_FUNCTION(navigation_thd,arg) {
 			chprintf((BaseSequentialStream *)&SD3, " , Integ: %d \r \n", erreur_distance_i/300);*/
 			chThdSleepUntilWindowed(time, time + MS2ST(10));
 		}
-		set_rgb_led(LED4, 0,0,0);
-		set_rgb_led(LED6, 0,0,0);
+		set_rgb_led(LED4, COLOR_BLACK);
+		set_rgb_led(LED6, COLOR_BLACK);
 		set_led(LED5,0);
 	}
 }
