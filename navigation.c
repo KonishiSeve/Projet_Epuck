@@ -9,7 +9,7 @@
 #include <navigation.h>
 
 #define CENTRE_IMAGE 320
-#define CIBLE_TAILLE 150
+#define CIBLE_TAILLE 130
 #define KP_FEU 1
 
 //Thread pour �viter les obstacles <-> s'aligner avec le feu
@@ -70,13 +70,21 @@ THD_FUNCTION(navigation_thd,arg) {
 			time = chVTGetSystemTime();
 			int16_t erreur = get_traffic_light_center() - CENTRE_IMAGE;
 
-			if(abs(erreur_distance) >= abs(CIBLE_TAILLE - get_traffic_light_size())*1.5) {
+			/*
+			if(abs(erreur_distance) >= abs(CIBLE_TAILLE - get_traffic_light_size())*2) {
 				erreur_distance = CIBLE_TAILLE - get_traffic_light_size();
 			}
-
+			*/
+			erreur_distance = CIBLE_TAILLE - get_traffic_light_size();
 			erreur_distance_i += erreur_distance*MS2ST(10);
-			left_motor_set_speed((erreur_distance*3 /*+ erreur_distance_i/300*/) + KP_FEU*erreur/2);
-			right_motor_set_speed((erreur_distance*3 /*+ erreur_distance_i/300*/) - KP_FEU*erreur/2);
+			left_motor_set_speed((erreur_distance + erreur_distance_i/200) + KP_FEU*erreur/2);
+			right_motor_set_speed((erreur_distance + erreur_distance_i/200) - KP_FEU*erreur/2);
+
+			/*
+			chprintf((BaseSequentialStream *)&SD3, "Size: %d", get_traffic_light_size());
+			chprintf((BaseSequentialStream *)&SD3, " , Center: %d", get_traffic_light_center());
+			chprintf((BaseSequentialStream *)&SD3, " , Prop: %d", erreur_distance*2);
+			chprintf((BaseSequentialStream *)&SD3, " , Integ: %d \r \n", erreur_distance_i/300);*/
 			chThdSleepUntilWindowed(time, time + MS2ST(10));
 		}
 		set_rgb_led(LED4, 0,0,0);

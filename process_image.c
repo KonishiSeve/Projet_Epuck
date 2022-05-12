@@ -208,16 +208,18 @@ static THD_FUNCTION(ProcessImage, arg) {
 		}
 		*/
 
+
 		chprintf((BaseSequentialStream *)&SD3, "ETAT: %d", general_state);
 		chprintf((BaseSequentialStream *)&SD3, " , taille red: %d", traffic_light_size);
 		chprintf((BaseSequentialStream *)&SD3, " , centre red: %d", traffic_light_center);
 		chprintf((BaseSequentialStream *)&SD3, " , mean red: %d",mean_red);
 		chprintf((BaseSequentialStream *)&SD3, " , STD red: %d", red_peak_std);
-		chprintf((BaseSequentialStream *)&SD3, " , mean vert: %d", mean_green);
+		chprintf((BaseSequentialStream *)&SD3, " , mean peak vert: %d", green_mean_peak);
 		chprintf((BaseSequentialStream *)&SD3, " , mean blue: %d", mean_blue);
 
 
 		chprintf((BaseSequentialStream *)&SD3, "\r \n");
+
 		chThdSleepMilliseconds(100);
     }
 }
