@@ -79,7 +79,7 @@ int main(void)
 	//set_rgb_led(LED6, 99,0,0);
 
 	while(1){
-		//chThdSleepMilliseconds(2000);
+		//chThdSleepMilliseconds(10);
 	}
 }
 

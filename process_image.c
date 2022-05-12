@@ -81,7 +81,7 @@ static THD_FUNCTION(ProcessImage, arg) {
 		uint64_t mean_red = 0;
 		uint64_t mean_green = 0;
 		uint64_t mean_blue = 0;
-		uint16_t debug_green_mean_peak = 0;
+		uint16_t green_mean_peak = 0;
 		for(int i = 0; i<IMAGE_WIDTH;i++){
 			uint8_t pixel_low = img_buff_ptr[2*i+1];
 			uint8_t pixel_high = img_buff_ptr[2*i];
@@ -93,14 +93,14 @@ static THD_FUNCTION(ProcessImage, arg) {
 
 			//Calcul de la moyenne verte dans le pic rouge du cycle precedent
 			if(i >= (traffic_light_center-traffic_light_size/2) && i <= (traffic_light_center+traffic_light_size/2)) {
-				debug_green_mean_peak += pixel_green;
+				green_mean_peak += pixel_green;
 			}
 
 			mean_red += pixel_red;
 			mean_blue += pixel_blue;
 			mean_green += pixel_green;
 		}
-		debug_green_mean_peak /= traffic_light_size;
+		green_mean_peak /= traffic_light_size;
 		mean_red = (mean_red/IMAGE_WIDTH) << 1; //conversion en 6 bits
 		mean_green = (mean_green/IMAGE_WIDTH);
 		mean_blue = (mean_blue/IMAGE_WIDTH) << 1; //conversion en 6 bits
@@ -166,7 +166,7 @@ static THD_FUNCTION(ProcessImage, arg) {
 		}
 
 		// ========== Detection de feu vert ===========
-		if(general_state == STATE_TRAFFIC_LIGHT && debug_green_mean_peak >= 60) {
+		if(general_state == STATE_TRAFFIC_LIGHT && green_mean_peak >= 60) {
 			general_state = STATE_ROAD;
 		}
 
@@ -193,7 +193,7 @@ static THD_FUNCTION(ProcessImage, arg) {
 		chprintf((BaseSequentialStream *)&SD3, " , centre red: %d", traffic_light_center);
 		chprintf((BaseSequentialStream *)&SD3, " , mean red: %d",mean_red);
 		chprintf((BaseSequentialStream *)&SD3, " , STD red: %d", red_peak_std);
-		chprintf((BaseSequentialStream *)&SD3, " , mean vert: %d", debug_green_mean_peak);
+		chprintf((BaseSequentialStream *)&SD3, " , mean vert: %d", green_mean_peak);
 		//chprintf((BaseSequentialStream *)&SD3, " , mean blue: %d", mean_blue);*/
 
 
