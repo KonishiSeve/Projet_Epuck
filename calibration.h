@@ -7,17 +7,21 @@
 #define RED_SLOPE_SHARPNESS 3
 
 //detection de feu rouge
-#define RED_MEAN_THRESHOLD 12
+#define RED_MEAN_THRESHOLD 13
 #define RED_PEAK_TRIGGER 3
-#define RED_PEAK_WIDTH_THRESHOLD 70
-#define RED_STD_THRESHOLD_LOW 2
-#define RED_STD_THRESHOLD_HIGH 30
+#define RED_PEAK_WIDTH_THRESHOLD 80
+#define RED_STD_THRESHOLD_LOW 8
+#define RED_STD_THRESHOLD_HIGH 50
 
 //detection de feu vert
 #define GREEN_MEAN_THRESHOLD 60
 
 //detection de jour/nuit
-#define NIGHT_THRESHOLD 15
-#define NIGHT_TRIGGER_THRESHOLD 20
+#define NIGHT_THRESHOLD 8
+#define NIGHT_TRIGGER_THRESHOLD 50
+
+//Capteurs de proximite
+#define PROX_COEFF_17DEG 10
+#define PROX_COEFF_49DEG 1
 
 #endif /* CALIBRATION_H_ */

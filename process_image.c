@@ -15,6 +15,9 @@
 
 #define IMAGE_WIDTH 640
 
+#define STATE_DAY 0
+#define STATE_NIGHT 1
+
 //semaphore
 static BSEMAPHORE_DECL(image_ready_sem, TRUE);
 
@@ -106,6 +109,24 @@ static THD_FUNCTION(ProcessImage, arg) {
 		mean_green = (mean_green/IMAGE_WIDTH);
 		mean_blue = (mean_blue/IMAGE_WIDTH) << 1; //conversion en 6 bits
 
+		uint8_t day_night_state = STATE_DAY;
+		// ===== Detection de jour/nuit =====
+		if(mean_blue < NIGHT_THRESHOLD){
+			trigger_night++;
+		}
+		else if(trigger_night > 0){
+			trigger_night--;
+		}
+
+		if(trigger_night >= NIGHT_TRIGGER_THRESHOLD) {
+			set_front_led(1);
+			trigger_night = NIGHT_TRIGGER_THRESHOLD;
+			day_night_state = STATE_NIGHT;
+		}
+		else if(trigger_night == 0){
+			set_front_led(0);
+			day_night_state = STATE_DAY;
+		}
 
 		/*
 		chprintf((BaseSequentialStream *)&SD3, "size: %d", traffic_light_size);
@@ -161,7 +182,7 @@ static THD_FUNCTION(ProcessImage, arg) {
 		else {
 			trigger_red = 0;
 		}
-		if(general_state == STATE_ROAD && trigger_red >= RED_PEAK_TRIGGER) {
+		if(general_state == STATE_ROAD && trigger_red >= RED_PEAK_TRIGGER && day_night_state == STATE_DAY) {
 			general_state = STATE_TRAFFIC_LIGHT;
 			trigger_red = 0;
 		}
@@ -169,22 +190,6 @@ static THD_FUNCTION(ProcessImage, arg) {
 		// ========== Detection de feu vert ===========
 		if(general_state == STATE_TRAFFIC_LIGHT && green_mean_peak >= 60) {
 			general_state = STATE_ROAD;
-		}
-
-		// ===== Detection de jour/nuit =====
-		if(mean_blue < NIGHT_THRESHOLD){
-			trigger_night++;
-		}
-		else if(trigger_night > 0){
-			trigger_night--;
-		}
-
-		if(trigger_night >= NIGHT_TRIGGER_THRESHOLD) {
-			set_front_led(1);
-			trigger_night = NIGHT_TRIGGER_THRESHOLD;
-		}
-		else if(trigger_night == 0){
-			set_front_led(0);
 		}
 
 

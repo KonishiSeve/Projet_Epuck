@@ -39,8 +39,8 @@ THD_FUNCTION(navigation_thd,arg) {
 		//Mode suivit de route
 		while(get_general_state()==0) {
 			const int8_t Kp = 1;
-			int16_t proxLeft = get_prox(7) + get_prox(6);
-			int16_t proxRight = get_prox(0) + get_prox(1);
+			int16_t proxLeft = PROX_COEFF_17DEG*get_prox(7) + PROX_COEFF_49DEG*get_prox(6);
+			int16_t proxRight = PROX_COEFF_17DEG*get_prox(0) + PROX_COEFF_49DEG*get_prox(1);
 			int16_t diff = proxLeft - proxRight;
 			diffspeed = diff*Kp;
 			left_motor_set_speed(400 + diffspeed);
