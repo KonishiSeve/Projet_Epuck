@@ -16,9 +16,9 @@
 #define GREEN_MEAN_THRESHOLD 60
 
 //detection de jour/nuit
-#define NIGHT_THRESHOLD 8
+#define NIGHT_THRESHOLD 10
 #define NIGHT_TRIGGER_THRESHOLD 50
-#define STEP_DAY 2
+#define STEP_DAY 1
 #define STEP_NIGHT 1
 
 //Capteurs de proximite
@@ -27,10 +27,11 @@
 #define PROX_KP 1
 
 //Alignement feu rouge
-#define ROTATION_KP 0.1
+#define ROTATION_KP 0.1f
 
 #define DISTANCE_FILTER_THRESHOLD 70
-#define DISTANCE_KP 3
-#define DISTANCE_KI 0.001 //0.005
+#define DISTANCE_KP 3 //3
+#define DISTANCE_KI 0.05f
+#define DISTANCE_KD 4 //0.5 //0.005f
 
 #endif /* CALIBRATION_H_ */

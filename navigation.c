@@ -60,7 +60,9 @@ THD_FUNCTION(navigation_thd,arg) {
 
 		systime_t time;
 		int16_t distance_error_i = 0;
+		int16_t distance_error_d;
 		int16_t distance_error_p = TARGET_SIZE - get_traffic_light_size(); //DELETE if no filtering
+		int16_t distance_last_error = distance_error_p;
 
 		//Mode alignement avec le feu rouge
 		while(get_general_state() == STATE_TRAFFIC_LIGHT) {
@@ -70,21 +72,24 @@ THD_FUNCTION(navigation_thd,arg) {
 			//Filtrage de valeurs fausses (trop grandes par rapport aux autres)
 			if(abs(distance_error_p) + DISTANCE_FILTER_THRESHOLD > abs(TARGET_SIZE - get_traffic_light_size())) {
 				distance_error_p = TARGET_SIZE - get_traffic_light_size();
-				distance_error_i += distance_error_p*MS2ST(50);
+				distance_error_i += distance_error_p;
+				distance_error_d = (distance_error_p - distance_last_error);
+				distance_last_error = distance_error_p;
 			}
 			else {
 				//DELETE debug
 				chprintf((BaseSequentialStream *)&SD3, " ===== FILTERED ===== value: %d , actual: %d \r\n",TARGET_SIZE - get_traffic_light_size(), distance_error_p);
 			}
-			left_motor_set_speed(DISTANCE_KP*distance_error_p + DISTANCE_KI*distance_error_i + ROTATION_KP*rotation_error);
-			right_motor_set_speed(DISTANCE_KP*distance_error_p + DISTANCE_KI*distance_error_i - ROTATION_KP * rotation_error);
+			left_motor_set_speed(DISTANCE_KP*distance_error_p + DISTANCE_KI*distance_error_i + DISTANCE_KD*distance_error_d + ROTATION_KP*rotation_error);
+			right_motor_set_speed(DISTANCE_KP*distance_error_p + DISTANCE_KI*distance_error_i + DISTANCE_KD*distance_error_d - ROTATION_KP * rotation_error);
 
-			/*
+
 			chprintf((BaseSequentialStream *)&SD3, "Size: %d", get_traffic_light_size());
 			chprintf((BaseSequentialStream *)&SD3, " , Center: %d", get_traffic_light_center());
-			chprintf((BaseSequentialStream *)&SD3, " , Prop: %d", erreur_distance*2);
-			chprintf((BaseSequentialStream *)&SD3, " , Integ: %d \r \n", erreur_distance_i/300);*/
-			chThdSleepUntilWindowed(time, time + MS2ST(50));
+			chprintf((BaseSequentialStream *)&SD3, " , Prop: %d", DISTANCE_KP*distance_error_p);
+			chprintf((BaseSequentialStream *)&SD3, " , Integ: %f", distance_error_i*DISTANCE_KI);
+			chprintf((BaseSequentialStream *)&SD3, " , Deriv: %d \r \n", DISTANCE_KD*distance_error_d);
+			chThdSleepUntilWindowed(time, time + MS2ST(100));
 		}
 		set_rgb_led(LED4, COLOR_BLACK);
 		set_rgb_led(LED6, COLOR_BLACK);
