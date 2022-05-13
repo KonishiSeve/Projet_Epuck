@@ -1,6 +1,7 @@
 #ifndef MAIN_H
 #define MAIN_H
 
+//DELETE ?
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -10,19 +11,17 @@ extern "C" {
 #include "parameter/parameter.h"
 #include "sensors/proximity.h"
 
-
-
-
-//constants for the differents parts of the project
-#define IMAGE_BUFFER_SIZE		640
+//MOVE
+#define IMAGE_BUFFER_SIZE 640
 
 /** Robot wide IPC bus. */
 extern messagebus_t bus;
-
 extern parameter_namespace_t parameter_root;
 
+//DELETE
 void SendUint8ToComputer(uint8_t* data, uint16_t size);
 
+//DELETE ?
 #ifdef __cplusplus
 }
 #endif

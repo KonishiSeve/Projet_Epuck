@@ -7,7 +7,6 @@ void start_navigation(void);
 #define BLINK_OFF 0
 #define BLINK_RIGHT 1
 #define BLINK_LEFT 2
-
 uint8_t get_cligno(void);
 
 #endif /* NAVIGATION_H_ */

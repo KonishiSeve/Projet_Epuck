@@ -2,7 +2,6 @@
 #define CALIBRATION_H_
 //Fichier contenant toutes les constantes qui servent a calibrer l'analyse d'image et les controleurs P/PI de navigation
 
-
 //detection de pic rouge
 #define RED_SLOPE_SHARPNESS 3
 
@@ -19,9 +18,18 @@
 //detection de jour/nuit
 #define NIGHT_THRESHOLD 8
 #define NIGHT_TRIGGER_THRESHOLD 50
+#define STEP_DAY 2
+#define STEP_NIGHT 1
 
 //Capteurs de proximite
 #define PROX_COEFF_17DEG 10
 #define PROX_COEFF_49DEG 1
+#define PROX_KP 1
+
+//Alignement feu rouge
+#define ROTATION_KP 0.5
+
+#define DISTANCE_KP 1
+#define DISTANCE_KI 0.005
 
 #endif /* CALIBRATION_H_ */

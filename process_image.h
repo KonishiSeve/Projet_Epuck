@@ -7,6 +7,7 @@ void process_image_start(void);
 #define STATE_ROAD 0
 #define STATE_TRAFFIC_LIGHT 1
 
+//Pour que navigation puisse acceder aux variables statiques
 uint16_t get_traffic_light_center(void);
 uint16_t get_traffic_light_size(void);
 uint8_t get_general_state(void);
