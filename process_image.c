@@ -35,8 +35,6 @@ static THD_FUNCTION(CaptureImage, arg) {
 		wait_image_ready();
 		//signals an image has been captured
 		chBSemSignal(&image_ready_sem);
-		//MOVE to capture image
-		//chThdSleepMilliseconds(100);
     }
 }
 
@@ -123,7 +121,8 @@ static THD_FUNCTION(ProcessImage, arg) {
 			general_state = STATE_ROAD;
 		}
 
-		if(day_night_state == STATE_DAY) { //On ne fait pas ces calculs en conduite de nuit
+		//On ne fait pas les calculs de detection de pic en conduite de nuit
+		if(day_night_state == STATE_DAY) {
 			// ========== Detection de pic pour le feux rouge ==========
 			uint16_t red_peak_left_limit = 0;
 			uint16_t red_peak_width_max = 0;
@@ -183,17 +182,6 @@ static THD_FUNCTION(ProcessImage, arg) {
 			}
 		}
 
-		//DELETE DEBUG
-		/*
-		if(debug_counter >= 2) {
-			SendUint8ToComputer(img_green,IMAGE_BUFFER_SIZE);
-			debug_counter = 0;
-		}
-		else {
-			debug_counter++;
-		}
-
-		*/
 		chprintf((BaseSequentialStream *)&SD3, " State: %d", general_state);
 		chprintf((BaseSequentialStream *)&SD3, " Light: %d", day_night_state);
 		chprintf((BaseSequentialStream *)&SD3, " N_Counter: %d", trigger_night);

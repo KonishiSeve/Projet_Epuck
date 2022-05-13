@@ -11,7 +11,6 @@ extern "C" {
 #include "parameter/parameter.h"
 #include "sensors/proximity.h"
 
-//MOVE
 #define IMAGE_BUFFER_SIZE 640
 
 /** Robot wide IPC bus. */

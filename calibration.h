@@ -30,8 +30,8 @@
 #define ROTATION_KP 0.1f
 
 #define DISTANCE_FILTER_THRESHOLD 70
-#define DISTANCE_KP 3 //3
+#define DISTANCE_KP 3
 #define DISTANCE_KI 0.05f
-#define DISTANCE_KD 4 //0.5 //0.005f
+#define DISTANCE_KD 4
 
 #endif /* CALIBRATION_H_ */

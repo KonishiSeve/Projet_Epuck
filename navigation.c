@@ -17,10 +17,9 @@
 
 //utilise pour communiquer avec le thread clignotant
 static uint8_t clignoter = BLINK_OFF;
-uint8_t get_cligno(){
+uint8_t get_blinker(){
 	return clignoter;
 }
-
 
 //thread qui s'occupe d'eviter les obstacles ou suivre le feu
 THD_WORKING_AREA(navigation_thd_wa, 256);
@@ -46,13 +45,11 @@ THD_FUNCTION(navigation_thd,arg) {
 			} else {
 				clignoter = BLINK_OFF;
 			}
-			//CHANGE ?
 			chThdSleepMilliseconds(100);
 		}
 		clignoter = BLINK_OFF;
 		set_rgb_led(LED8, COLOR_BLACK);
 		set_rgb_led(LED8, COLOR_BLACK);
-		//CHANGE ? before 200
 		//chThdSleepMilliseconds(100);
 
 		//Allumage des phares de freinage
