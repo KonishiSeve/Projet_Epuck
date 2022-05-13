@@ -75,8 +75,8 @@ THD_FUNCTION(navigation_thd,arg) {
 			*/
 			distance_error_p = TARGET_SIZE - get_traffic_light_size();
 			distance_error_i += distance_error_p*MS2ST(10);
-			left_motor_set_speed(DISTANCE_KP*erreur_distance + DISTANCE_KI*erreur_distance_i + ROTATION_KP*rotation_error);
-			right_motor_set_speed(DISTANCE_KP*erreur_distance + DISTANCE_KI*erreur_distance_i - ROTATION_KP * rotation_error);
+			left_motor_set_speed(DISTANCE_KP*distance_error_p + DISTANCE_KI*distance_error_i + ROTATION_KP*rotation_error);
+			right_motor_set_speed(DISTANCE_KP*distance_error_p + DISTANCE_KI*distance_error_i - ROTATION_KP * rotation_error);
 
 			/*
 			chprintf((BaseSequentialStream *)&SD3, "Size: %d", get_traffic_light_size());
