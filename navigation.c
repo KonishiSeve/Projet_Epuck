@@ -78,17 +78,18 @@ THD_FUNCTION(navigation_thd,arg) {
 			}
 			else {
 				//DELETE debug
-				chprintf((BaseSequentialStream *)&SD3, " ===== FILTERED ===== value: %d , actual: %d \r\n",TARGET_SIZE - get_traffic_light_size(), distance_error_p);
+				//chprintf((BaseSequentialStream *)&SD3, " ===== FILTERED ===== value: %d , actual: %d \r\n",TARGET_SIZE - get_traffic_light_size(), distance_error_p);
 			}
 			left_motor_set_speed(DISTANCE_KP*distance_error_p + DISTANCE_KI*distance_error_i + DISTANCE_KD*distance_error_d + ROTATION_KP*rotation_error);
 			right_motor_set_speed(DISTANCE_KP*distance_error_p + DISTANCE_KI*distance_error_i + DISTANCE_KD*distance_error_d - ROTATION_KP * rotation_error);
 
-
+			//DELETE debug
+			/*
 			chprintf((BaseSequentialStream *)&SD3, "Size: %d", get_traffic_light_size());
 			chprintf((BaseSequentialStream *)&SD3, " , Center: %d", get_traffic_light_center());
 			chprintf((BaseSequentialStream *)&SD3, " , Prop: %d", DISTANCE_KP*distance_error_p);
 			chprintf((BaseSequentialStream *)&SD3, " , Integ: %f", distance_error_i*DISTANCE_KI);
-			chprintf((BaseSequentialStream *)&SD3, " , Deriv: %d \r \n", DISTANCE_KD*distance_error_d);
+			chprintf((BaseSequentialStream *)&SD3, " , Deriv: %d \r \n", DISTANCE_KD*distance_error_d);*/
 			chThdSleepUntilWindowed(time, time + MS2ST(100));
 		}
 		set_rgb_led(LED4, COLOR_BLACK);

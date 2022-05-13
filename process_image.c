@@ -111,73 +111,80 @@ static THD_FUNCTION(ProcessImage, arg) {
 		else if(trigger_night >= STEP_DAY){
 			trigger_night -= STEP_DAY;
 		}
-		if(trigger_night >= NIGHT_TRIGGER_THRESHOLD) {
+		if(trigger_night >= NIGHT_TRIGGER_THRESHOLD && general_state == STATE_ROAD) {
 			set_front_led(1);
 			trigger_night = NIGHT_TRIGGER_THRESHOLD;
 			day_night_state = STATE_NIGHT;
+			general_state = STATE_ROAD;
 		}
 		else if(trigger_night == 0){
 			set_front_led(0);
 			day_night_state = STATE_DAY;
-		}
-
-		// ========== Detection de pic pour le feux rouge ==========
-		uint16_t red_peak_left_limit = 0;
-		uint16_t red_peak_width_max = 0;
-		uint16_t red_peak_center = 0;
-		for(int i = RED_SLOPE_SHARPNESS; i<IMAGE_WIDTH;i++){
-			//Recherche du debut d'un pic
-			if(img_red[i] > mean_red && img_red[i-RED_SLOPE_SHARPNESS] < mean_red) {
-				if(red_peak_left_limit == 0) {
-					red_peak_left_limit = i;
-				}
-			}
-			//Recherche de la fin d'un pic
-			else if(img_red[i] < mean_red && img_red[i-RED_SLOPE_SHARPNESS] > mean_red && red_peak_left_limit !=0) {
-				//On prend le pic le plus large
-				if((i - red_peak_left_limit - RED_SLOPE_SHARPNESS) > red_peak_width_max) {
-					red_peak_width_max = i - red_peak_left_limit - RED_SLOPE_SHARPNESS;
-					red_peak_center = (red_peak_left_limit+i-RED_SLOPE_SHARPNESS)/2;
-				}
-				red_peak_left_limit = 0;
-			}
-		}
-		traffic_light_size = red_peak_width_max;
-		traffic_light_center = red_peak_center;
-
-		// ===== Calcul de la moyenne rouge dans le pic rouge =====
-		uint16_t red_peak_mean = 0;
-		for(int i=red_peak_left_limit;i<red_peak_left_limit+red_peak_width_max;i++) {
-			red_peak_mean += img_red[i];
-		}
-		red_peak_mean /= red_peak_width_max;
-
-		// ===== Calcul de l'ecart type rouge dans le pic rouge =====
-		uint16_t red_peak_std = 0;
-		for(int i=red_peak_left_limit;i<red_peak_left_limit+red_peak_width_max;i++) {
-			red_peak_std += abs(img_red[i] - red_peak_mean);
-		}
-		red_peak_std = 10*red_peak_std/red_peak_width_max; //multiplication par 10 pour garder une precision sans utiliser de float
-
-		// ========== Detection de feu rouge ==========
-		if(general_state == STATE_ROAD && trigger_red < RED_PEAK_TRIGGER && mean_red >= RED_MEAN_THRESHOLD && red_peak_std >= RED_STD_THRESHOLD_LOW && red_peak_std <= RED_STD_THRESHOLD_HIGH && traffic_light_size >= RED_PEAK_WIDTH_THRESHOLD) {
-			trigger_red++;
-		}
-		else {
-			trigger_red = 0;
-		}
-		if(general_state == STATE_ROAD && trigger_red >= RED_PEAK_TRIGGER && day_night_state == STATE_DAY) {
-			general_state = STATE_TRAFFIC_LIGHT;
-			trigger_red = 0;
-			//DELETE debug
-			chprintf((BaseSequentialStream *)&SD3, " ===== RED TRIGGER ===== \r\n");
-		}
-
-		// ========== Detection de feu vert ===========
-		if(general_state == STATE_TRAFFIC_LIGHT && green_mean_peak >= GREEN_MEAN_THRESHOLD) {
 			general_state = STATE_ROAD;
 		}
 
+		//DELETE debug
+		chprintf((BaseSequentialStream *)&SD3, "COUNTER: %d", trigger_night);
+		chprintf((BaseSequentialStream *)&SD3, " , MEAN_BLUE: %d \r\n", mean_blue);
+
+		if(day_night_state == STATE_DAY) { //On ne fait pas ces calculs en conduite de nuit
+			// ========== Detection de pic pour le feux rouge ==========
+			uint16_t red_peak_left_limit = 0;
+			uint16_t red_peak_width_max = 0;
+			uint16_t red_peak_center = 0;
+			for(int i = RED_SLOPE_SHARPNESS; i<IMAGE_WIDTH;i++){
+				//Recherche du debut d'un pic
+				if(img_red[i] > mean_red && img_red[i-RED_SLOPE_SHARPNESS] < mean_red) {
+					if(red_peak_left_limit == 0) {
+						red_peak_left_limit = i;
+					}
+				}
+				//Recherche de la fin d'un pic
+				else if(img_red[i] < mean_red && img_red[i-RED_SLOPE_SHARPNESS] > mean_red && red_peak_left_limit !=0) {
+					//On prend le pic le plus large
+					if((i - red_peak_left_limit - RED_SLOPE_SHARPNESS) > red_peak_width_max) {
+						red_peak_width_max = i - red_peak_left_limit - RED_SLOPE_SHARPNESS;
+						red_peak_center = (red_peak_left_limit+i-RED_SLOPE_SHARPNESS)/2;
+					}
+					red_peak_left_limit = 0;
+				}
+			}
+			traffic_light_size = red_peak_width_max;
+			traffic_light_center = red_peak_center;
+
+			// ===== Calcul de la moyenne rouge dans le pic rouge =====
+			uint16_t red_peak_mean = 0;
+			for(int i=red_peak_left_limit;i<red_peak_left_limit+red_peak_width_max;i++) {
+				red_peak_mean += img_red[i];
+			}
+			red_peak_mean /= red_peak_width_max;
+
+			// ===== Calcul de l'ecart type rouge dans le pic rouge =====
+			uint16_t red_peak_std = 0;
+			for(int i=red_peak_left_limit;i<red_peak_left_limit+red_peak_width_max;i++) {
+				red_peak_std += abs(img_red[i] - red_peak_mean);
+			}
+			red_peak_std = 10*red_peak_std/red_peak_width_max; //multiplication par 10 pour garder une precision sans utiliser de float
+
+			// ========== Detection de feu rouge ==========
+			if(general_state == STATE_ROAD && trigger_red < RED_PEAK_TRIGGER && mean_red >= RED_MEAN_THRESHOLD && red_peak_std >= RED_STD_THRESHOLD_LOW && red_peak_std <= RED_STD_THRESHOLD_HIGH && traffic_light_size >= RED_PEAK_WIDTH_THRESHOLD) {
+				trigger_red++;
+			}
+			else {
+				trigger_red = 0;
+			}
+			if(general_state == STATE_ROAD && trigger_red >= RED_PEAK_TRIGGER) {
+				general_state = STATE_TRAFFIC_LIGHT;
+				trigger_red = 0;
+				//DELETE debug
+				chprintf((BaseSequentialStream *)&SD3, " ===== RED TRIGGER ===== \r\n");
+			}
+
+			// ========== Detection de feu vert ===========
+			if(general_state == STATE_TRAFFIC_LIGHT && green_mean_peak >= GREEN_MEAN_THRESHOLD) {
+				general_state = STATE_ROAD;
+			}
+		}
 
 		//DELETE DEBUG
 		/*

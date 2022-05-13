@@ -16,8 +16,8 @@
 #define GREEN_MEAN_THRESHOLD 60
 
 //detection de jour/nuit
-#define NIGHT_THRESHOLD 10
-#define NIGHT_TRIGGER_THRESHOLD 50
+#define NIGHT_THRESHOLD 14
+#define NIGHT_TRIGGER_THRESHOLD 40
 #define STEP_DAY 1
 #define STEP_NIGHT 1
 
