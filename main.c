@@ -52,7 +52,7 @@ int main(void)
 	chSysInit();
 	mpu_init();
 
-	serial_start(); //DELETE
+	serial_start(); //DELETE debug
 
 	//demarrage du SPI pour les leds RGB
 	spi_comm_start();
@@ -75,11 +75,10 @@ int main(void)
 	clignotant_start();
 	process_image_start();
 
-	//DELETE ?
 	chThdSleepMilliseconds(100);
-	
+
 	while(1){
-		//chThdSleepMilliseconds(10);
+		//chThdSleepMilliseconds(10); //Les LEDS marchent plus si on le met
 	}
 }
 

@@ -50,8 +50,8 @@ THD_FUNCTION(navigation_thd,arg) {
 			chThdSleepMilliseconds(100);
 		}
 		clignoter = BLINK_OFF;
-		//CHANGE ?
-		chThdSleepMilliseconds(200);
+		//CHANGE ? before 200
+		chThdSleepMilliseconds(100);
 
 		//Allumage des phares de freinage
 		set_rgb_led(LED4, COLOR_RED);
@@ -67,14 +67,15 @@ THD_FUNCTION(navigation_thd,arg) {
 			time = chVTGetSystemTime();
 			int16_t rotation_error = get_traffic_light_center() - IMAGE_CENTER;
 
-			//DELETE if no filtering
-			/*
-			if(abs(erreur_distance) >= abs(CIBLE_TAILLE - get_traffic_light_size())*2) {
-				erreur_distance = CIBLE_TAILLE - get_traffic_light_size();
+			//Filtrage de valeurs fausses (trop grandes par rapport aux autres)
+			if(abs(distance_error_p) + DISTANCE_FILTER_THRESHOLD > abs(TARGET_SIZE - get_traffic_light_size())) {
+				distance_error_p = TARGET_SIZE - get_traffic_light_size();
+				distance_error_i += distance_error_p*MS2ST(50);
 			}
-			*/
-			distance_error_p = TARGET_SIZE - get_traffic_light_size();
-			distance_error_i += distance_error_p*MS2ST(10);
+			else {
+				//DELETE debug
+				chprintf((BaseSequentialStream *)&SD3, " ===== FILTERED ===== value: %d , actual: %d \r\n",TARGET_SIZE - get_traffic_light_size(), distance_error_p);
+			}
 			left_motor_set_speed(DISTANCE_KP*distance_error_p + DISTANCE_KI*distance_error_i + ROTATION_KP*rotation_error);
 			right_motor_set_speed(DISTANCE_KP*distance_error_p + DISTANCE_KI*distance_error_i - ROTATION_KP * rotation_error);
 
@@ -83,7 +84,7 @@ THD_FUNCTION(navigation_thd,arg) {
 			chprintf((BaseSequentialStream *)&SD3, " , Center: %d", get_traffic_light_center());
 			chprintf((BaseSequentialStream *)&SD3, " , Prop: %d", erreur_distance*2);
 			chprintf((BaseSequentialStream *)&SD3, " , Integ: %d \r \n", erreur_distance_i/300);*/
-			chThdSleepUntilWindowed(time, time + MS2ST(10));
+			chThdSleepUntilWindowed(time, time + MS2ST(50));
 		}
 		set_rgb_led(LED4, COLOR_BLACK);
 		set_rgb_led(LED6, COLOR_BLACK);

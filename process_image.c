@@ -1,6 +1,5 @@
 #include "ch.h"
 #include "hal.h"
-#include <usbcfg.h> //DELETE
 
 #include <camera/po8030.h>
 #include <chprintf.h>
@@ -36,6 +35,8 @@ static THD_FUNCTION(CaptureImage, arg) {
 		wait_image_ready();
 		//signals an image has been captured
 		chBSemSignal(&image_ready_sem);
+		//MOVE to capture image
+		//chThdSleepMilliseconds(100);
     }
 }
 
@@ -69,17 +70,11 @@ static THD_FUNCTION(ProcessImage, arg) {
 	uint8_t trigger_red = 0;
 	uint8_t trigger_night = 0;
 
-	//DELETE
-	uint8_t debug_counter = 0;
-
     while(1){
     	//waits until an image has been captured
         chBSemWait(&image_ready_sem);
 		//gets the pointer to the array filled with the last image in RGB565    
 		img_buff_ptr = dcmi_get_last_image_ptr();
-
-		//DELETE ?
-		uint8_t img_buff[IMAGE_WIDTH] = {0};
 
 		// ===== Separation des 3 cannaux de couleur et calcul des moyennes =====
 		uint64_t mean_red = 0;
@@ -174,6 +169,8 @@ static THD_FUNCTION(ProcessImage, arg) {
 		if(general_state == STATE_ROAD && trigger_red >= RED_PEAK_TRIGGER && day_night_state == STATE_DAY) {
 			general_state = STATE_TRAFFIC_LIGHT;
 			trigger_red = 0;
+			//DELETE debug
+			chprintf((BaseSequentialStream *)&SD3, " ===== RED TRIGGER ===== \r\n");
 		}
 
 		// ========== Detection de feu vert ===========
@@ -201,7 +198,6 @@ static THD_FUNCTION(ProcessImage, arg) {
 		chprintf((BaseSequentialStream *)&SD3, " , mean blue: %d", mean_blue);
 		chprintf((BaseSequentialStream *)&SD3, "\r \n");
 
-		//MOVE to capture image
 		chThdSleepMilliseconds(100);
     }
 }
