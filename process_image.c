@@ -69,6 +69,7 @@ static THD_FUNCTION(ProcessImage, arg) {
 	//Compteurs utilises pour declencher le suivit de feu rouge ou la conduite de nuit
 	uint8_t trigger_red = 0;
 	uint8_t trigger_night = 0;
+	uint8_t day_night_state = STATE_DAY;
 
     while(1){
     	//waits until an image has been captured
@@ -104,7 +105,6 @@ static THD_FUNCTION(ProcessImage, arg) {
 		mean_blue = (mean_blue/IMAGE_WIDTH) << 1; //conversion en 6 bits
 
 		// ===== Detection de jour/nuit =====
-		uint8_t day_night_state = STATE_DAY;
 		if(mean_blue < NIGHT_THRESHOLD){
 			trigger_night += STEP_NIGHT;
 		}
@@ -122,10 +122,6 @@ static THD_FUNCTION(ProcessImage, arg) {
 			day_night_state = STATE_DAY;
 			general_state = STATE_ROAD;
 		}
-
-		//DELETE debug
-		chprintf((BaseSequentialStream *)&SD3, "COUNTER: %d", trigger_night);
-		chprintf((BaseSequentialStream *)&SD3, " , MEAN_BLUE: %d \r\n", mean_blue);
 
 		if(day_night_state == STATE_DAY) { //On ne fait pas ces calculs en conduite de nuit
 			// ========== Detection de pic pour le feux rouge ==========
@@ -165,6 +161,7 @@ static THD_FUNCTION(ProcessImage, arg) {
 				red_peak_std += abs(img_red[i] - red_peak_mean);
 			}
 			red_peak_std = 10*red_peak_std/red_peak_width_max; //multiplication par 10 pour garder une precision sans utiliser de float
+			chprintf((BaseSequentialStream *)&SD3, " STD red: %d", red_peak_std);
 
 			// ========== Detection de feu rouge ==========
 			if(general_state == STATE_ROAD && trigger_red < RED_PEAK_TRIGGER && mean_red >= RED_MEAN_THRESHOLD && red_peak_std >= RED_STD_THRESHOLD_LOW && red_peak_std <= RED_STD_THRESHOLD_HIGH && traffic_light_size >= RED_PEAK_WIDTH_THRESHOLD) {
@@ -195,15 +192,17 @@ static THD_FUNCTION(ProcessImage, arg) {
 		else {
 			debug_counter++;
 		}
-		*//*
-		chprintf((BaseSequentialStream *)&SD3, "ETAT: %d", general_state);
-		chprintf((BaseSequentialStream *)&SD3, " , taille red: %d", traffic_light_size);
-		chprintf((BaseSequentialStream *)&SD3, " , centre red: %d", traffic_light_center);
-		chprintf((BaseSequentialStream *)&SD3, " , mean red: %d",mean_red);
-		chprintf((BaseSequentialStream *)&SD3, " , STD red: %d", red_peak_std);
-		chprintf((BaseSequentialStream *)&SD3, " , mean peak vert: %d", green_mean_peak);
-		chprintf((BaseSequentialStream *)&SD3, " , mean blue: %d", mean_blue);
-		chprintf((BaseSequentialStream *)&SD3, "\r \n");*/
+
+		*/
+		chprintf((BaseSequentialStream *)&SD3, " State: %d", general_state);
+		chprintf((BaseSequentialStream *)&SD3, " Light: %d", day_night_state);
+		chprintf((BaseSequentialStream *)&SD3, " N_Counter: %d", trigger_night);
+		chprintf((BaseSequentialStream *)&SD3, " taille red: %d", traffic_light_size);
+		chprintf((BaseSequentialStream *)&SD3, " centre red: %d", traffic_light_center);
+		chprintf((BaseSequentialStream *)&SD3, " mean red: %d",mean_red);
+		chprintf((BaseSequentialStream *)&SD3, " mean peak vert: %d", green_mean_peak);
+		chprintf((BaseSequentialStream *)&SD3, " mean blue: %d", mean_blue);
+		chprintf((BaseSequentialStream *)&SD3, "\r \n");
 
 		chThdSleepMilliseconds(100);
     }
