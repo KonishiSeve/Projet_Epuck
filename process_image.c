@@ -2,7 +2,6 @@
 #include "hal.h"
 
 #include <camera/po8030.h>
-#include <chprintf.h>
 #include <leds.h>
 
 #include <calibration.h>
@@ -161,9 +160,6 @@ static THD_FUNCTION(ProcessImage, arg) {
 			}
 			red_peak_std = 10*red_peak_std/red_peak_width_max; //multiplication par 10 pour garder une precision sans utiliser de float
 
-			//DELETE debug
-			chprintf((BaseSequentialStream *)&SD3, " STD red: %d", red_peak_std);
-
 			// ========== Detection de feu rouge ==========
 			if(general_state == STATE_ROAD && trigger_red < RED_PEAK_TRIGGER && mean_red >= RED_MEAN_THRESHOLD && red_peak_std >= RED_STD_THRESHOLD_LOW && red_peak_std <= RED_STD_THRESHOLD_HIGH && traffic_light_size >= RED_PEAK_WIDTH_THRESHOLD) {
 				trigger_red++;
@@ -174,8 +170,6 @@ static THD_FUNCTION(ProcessImage, arg) {
 			if(general_state == STATE_ROAD && trigger_red >= RED_PEAK_TRIGGER) {
 				general_state = STATE_TRAFFIC_LIGHT;
 				trigger_red = 0;
-				//DELETE debug
-				chprintf((BaseSequentialStream *)&SD3, " ===== RED TRIGGER ===== \r\n");
 			}
 
 			// ========== Detection de feu vert ===========
@@ -183,17 +177,6 @@ static THD_FUNCTION(ProcessImage, arg) {
 				general_state = STATE_ROAD;
 			}
 		}
-
-		//DELETE debug
-		chprintf((BaseSequentialStream *)&SD3, " State: %d", general_state);
-		chprintf((BaseSequentialStream *)&SD3, " Light: %d", day_night_state);
-		chprintf((BaseSequentialStream *)&SD3, " N_Counter: %d", trigger_night);
-		chprintf((BaseSequentialStream *)&SD3, " taille red: %d", traffic_light_size);
-		chprintf((BaseSequentialStream *)&SD3, " centre red: %d", traffic_light_center);
-		chprintf((BaseSequentialStream *)&SD3, " mean red: %d",mean_red);
-		chprintf((BaseSequentialStream *)&SD3, " mean peak vert: %d", green_mean_peak);
-		chprintf((BaseSequentialStream *)&SD3, " mean blue: %d", mean_blue);
-		chprintf((BaseSequentialStream *)&SD3, "\r \n");
 
 		chThdSleepMilliseconds(100);
     }

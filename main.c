@@ -8,7 +8,6 @@
 #include "memory_protection.h"
 
 #include <camera/po8030.h>
-#include <chprintf.h>
 #include <leds.h>
 #include <motors.h>
 #include <sensors/proximity.h>
@@ -23,27 +22,6 @@ messagebus_t bus;
 MUTEX_DECL(bus_lock);
 CONDVAR_DECL(bus_condvar);
 
-//DELETE Pour le debug
-void SendUint8ToComputer(uint8_t* data, uint16_t size)
-{
-	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)"START", 5);
-	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)&size, sizeof(uint16_t));
-	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)data, size);
-}
-
-//DELETE debug
-static void serial_start(void)
-{
-	static SerialConfig ser_cfg = {
-	    115200,
-	    0,
-	    0,
-	    0,
-	};
-
-	sdStart(&SD3, &ser_cfg); // UART3.
-}
-
 
 int main(void)
 {
@@ -51,8 +29,6 @@ int main(void)
 	halInit();
 	chSysInit();
 	mpu_init();
-
-	serial_start(); //DELETE debug
 
 	//demarrage du SPI pour les leds RGB
 	spi_comm_start();
@@ -78,6 +54,7 @@ int main(void)
 	chThdSleepMilliseconds(100);
 
 	while(1){
+		//si on met un sleep ici, les LEDS RGB marchent plus
 	}
 }
 
