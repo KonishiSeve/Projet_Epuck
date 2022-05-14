@@ -1,7 +1,7 @@
 #ifndef NAVIGATION_H_
 #define NAVIGATION_H_
 
-void start_navigation(void);
+void navigation_start(void);
 
 //communication avec clignotant
 #define BLINK_OFF 0

@@ -80,7 +80,7 @@ static THD_FUNCTION(ProcessImage, arg) {
 		uint64_t mean_green = 0;
 		uint64_t mean_blue = 0;
 		uint16_t green_mean_peak = 0;
-		for(int i = 0; i<IMAGE_WIDTH;i++){
+		for(uint16_t i = 0; i<IMAGE_WIDTH;i++){
 			uint8_t pixel_low = img_buff_ptr[2*i+1];
 			uint8_t pixel_high = img_buff_ptr[2*i];
 			uint8_t pixel_blue = pixel_low & 0b00011111;
@@ -127,7 +127,7 @@ static THD_FUNCTION(ProcessImage, arg) {
 			uint16_t red_peak_left_limit = 0;
 			uint16_t red_peak_width_max = 0;
 			uint16_t red_peak_center = 0;
-			for(int i = RED_SLOPE_SHARPNESS; i<IMAGE_WIDTH;i++){
+			for(uint16_t i = RED_SLOPE_SHARPNESS; i<IMAGE_WIDTH;i++){
 				//Recherche du debut d'un pic
 				if(img_red[i] > mean_red && img_red[i-RED_SLOPE_SHARPNESS] < mean_red) {
 					if(red_peak_left_limit == 0) {
@@ -149,14 +149,14 @@ static THD_FUNCTION(ProcessImage, arg) {
 
 			// ===== Calcul de la moyenne rouge dans le pic rouge =====
 			uint16_t red_peak_mean = 0;
-			for(int i=red_peak_left_limit;i<red_peak_left_limit+red_peak_width_max;i++) {
+			for(uint16_t i=red_peak_left_limit;i<red_peak_left_limit+red_peak_width_max;i++) {
 				red_peak_mean += img_red[i];
 			}
 			red_peak_mean /= red_peak_width_max;
 
 			// ===== Calcul de l'ecart type rouge dans le pic rouge =====
 			uint16_t red_peak_std = 0;
-			for(int i=red_peak_left_limit;i<red_peak_left_limit+red_peak_width_max;i++) {
+			for(uint16_t i=red_peak_left_limit;i<red_peak_left_limit+red_peak_width_max;i++) {
 				red_peak_std += abs(img_red[i] - red_peak_mean);
 			}
 			red_peak_std = 10*red_peak_std/red_peak_width_max; //multiplication par 10 pour garder une precision sans utiliser de float

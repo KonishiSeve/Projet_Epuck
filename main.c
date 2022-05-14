@@ -72,7 +72,7 @@ int main(void)
 
 	//Initialisation des thread
 	navigation_start();
-	clignotant_start();
+	blinker_start();
 	process_image_start();
 
 	chThdSleepMilliseconds(100);
