@@ -76,9 +76,9 @@ static THD_FUNCTION(ProcessImage, arg) {
 		img_buff_ptr = dcmi_get_last_image_ptr();
 
 		// ===== Separation des 3 cannaux de couleur et calcul des moyennes =====
-		uint64_t mean_red = 0;
-		uint64_t mean_green = 0;
-		uint64_t mean_blue = 0;
+		uint16_t mean_red = 0;
+		uint16_t mean_green = 0;
+		uint16_t mean_blue = 0;
 		uint16_t green_mean_peak = 0;
 		for(uint16_t i = 0; i<IMAGE_WIDTH;i++){
 			uint8_t pixel_low = img_buff_ptr[2*i+1];
@@ -98,9 +98,9 @@ static THD_FUNCTION(ProcessImage, arg) {
 			mean_green += pixel_green;
 		}
 		green_mean_peak /= traffic_light_size;
-		mean_red = (mean_red/IMAGE_WIDTH) << 1; //conversion en 6 bits
+		mean_red = (mean_red/IMAGE_WIDTH) << 1; //conversion en format 6 bits
 		mean_green = (mean_green/IMAGE_WIDTH);
-		mean_blue = (mean_blue/IMAGE_WIDTH) << 1; //conversion en 6 bits
+		mean_blue = (mean_blue/IMAGE_WIDTH) << 1; //conversion en format 6 bits
 
 		// ===== Detection de jour/nuit =====
 		if(mean_blue < NIGHT_THRESHOLD){
@@ -123,6 +123,7 @@ static THD_FUNCTION(ProcessImage, arg) {
 
 		//On ne fait pas les calculs de detection de pic en conduite de nuit
 		if(day_night_state == STATE_DAY) {
+
 			// ========== Detection de pic pour le feux rouge ==========
 			uint16_t red_peak_left_limit = 0;
 			uint16_t red_peak_width_max = 0;
@@ -160,6 +161,8 @@ static THD_FUNCTION(ProcessImage, arg) {
 				red_peak_std += abs(img_red[i] - red_peak_mean);
 			}
 			red_peak_std = 10*red_peak_std/red_peak_width_max; //multiplication par 10 pour garder une precision sans utiliser de float
+
+			//DELETE debug
 			chprintf((BaseSequentialStream *)&SD3, " STD red: %d", red_peak_std);
 
 			// ========== Detection de feu rouge ==========
@@ -182,6 +185,7 @@ static THD_FUNCTION(ProcessImage, arg) {
 			}
 		}
 
+		//DELETE debug
 		chprintf((BaseSequentialStream *)&SD3, " State: %d", general_state);
 		chprintf((BaseSequentialStream *)&SD3, " Light: %d", day_night_state);
 		chprintf((BaseSequentialStream *)&SD3, " N_Counter: %d", trigger_night);

@@ -50,7 +50,6 @@ THD_FUNCTION(navigation_thd,arg) {
 		clignoter = BLINK_OFF;
 		set_rgb_led(LED8, COLOR_BLACK);
 		set_rgb_led(LED8, COLOR_BLACK);
-		//chThdSleepMilliseconds(100);
 
 		//Allumage des phares de freinage
 		set_rgb_led(LED4, COLOR_RED);

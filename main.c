@@ -31,7 +31,7 @@ void SendUint8ToComputer(uint8_t* data, uint16_t size)
 	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)data, size);
 }
 
-//DELETE Utilis� pour le d�bug
+//DELETE debug
 static void serial_start(void)
 {
 	static SerialConfig ser_cfg = {
@@ -78,7 +78,6 @@ int main(void)
 	chThdSleepMilliseconds(100);
 
 	while(1){
-		//chThdSleepMilliseconds(10); //Les LEDS marchent plus si on le met
 	}
 }
 
