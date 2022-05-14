@@ -74,7 +74,7 @@ THD_FUNCTION(navigation_thd,arg) {
 				//controleur PID
 				distance_error_p = TARGET_SIZE - get_traffic_light_size();
 				//on coupe le terme integral s'il est trop grand
-				if(abs(DISTANCE_KI*distane_error_i) <= DISTANCE_I_CUT_THRESHOLD) {
+				if(abs(DISTANCE_KI*distance_error_i) <= DISTANCE_I_CUT_THRESHOLD) {
 					distance_error_i += distance_error_p;
 				}
 				distance_error_d = (distance_error_p - distance_last_error);
