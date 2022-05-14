@@ -118,7 +118,6 @@ static THD_FUNCTION(ProcessImage, arg) {
 		else if(trigger_night == 0){
 			set_front_led(0);
 			day_night_state = STATE_DAY;
-			general_state = STATE_ROAD;
 		}
 
 		//On ne fait pas les calculs de detection de pic en conduite de nuit

@@ -13,7 +13,7 @@
 #define RED_STD_THRESHOLD_HIGH 120
 
 //detection de feu vert
-#define GREEN_MEAN_THRESHOLD 60
+#define GREEN_MEAN_THRESHOLD 50
 
 //detection de jour/nuit
 #define NIGHT_THRESHOLD 14
