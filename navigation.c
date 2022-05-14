@@ -1,12 +1,13 @@
 #include "ch.h"
 #include "hal.h"
-#include <motors.h>
-#include <main.h>
-#include <process_image.h>
-#include <chprintf.h>
+
 #include <leds.h>
+#include <motors.h>
+
 #include <calibration.h>
+#include <main.h>
 #include <navigation.h>
+#include <process_image.h>
 
 #define IMAGE_CENTER 320
 #define TARGET_SIZE 130

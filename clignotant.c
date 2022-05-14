@@ -1,6 +1,8 @@
 #include "ch.h"
 #include "hal.h"
+
 #include <leds.h>
+
 #include <main.h>
 #include <navigation.h>
 
