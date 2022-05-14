@@ -14,6 +14,7 @@
 #define COLOR_BLACK 0,0,0
 #define ROAD_SPEED 400
 #define BLINK_THRESHOLD 50
+#define DISTANCE_I_CUT_THRESHOLD 500
 
 //utilise pour communiquer avec le thread clignotant
 static uint8_t clignoter = BLINK_OFF;
@@ -72,7 +73,10 @@ THD_FUNCTION(navigation_thd,arg) {
 
 				//controleur PID
 				distance_error_p = TARGET_SIZE - get_traffic_light_size();
-				distance_error_i += distance_error_p;
+				//on coupe le terme integral s'il est trop grand
+				if(abs(DISTANCE_KI*distane_error_i) <= DISTANCE_I_CUT_THRESHOLD) {
+					distance_error_i += distance_error_p;
+				}
 				distance_error_d = (distance_error_p - distance_last_error);
 				distance_last_error = distance_error_p;
 				left_motor_set_speed(DISTANCE_KP*distance_error_p + DISTANCE_KI*distance_error_i + DISTANCE_KD*distance_error_d + ROTATION_KP*rotation_error);
